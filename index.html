@@ -113,12 +113,12 @@
     letter-spacing: 1px;
   }
 
-  /* Galería de fotos dentro del item */
   .galeria-lib {
     display: flex;
     gap: 8px;
     overflow-x: auto;
     padding: 5px 0;
+    min-height: 20px;
   }
   
   .img-wrapper {
@@ -265,7 +265,6 @@ const checklistNocturno = [
 const checklistCurso = ["TIA, ID Empresa, INE, licencia, Examen Medico","Check-in hotel/vuelo", "Verificar Links curso", "Al culminar realizar forms de cursos", "Check-out hotel/vuelo"];
 const checklistTiempoExtra = ["Forms tiempo extra"];
 
-// Almacén temporal de fotos por aeronave (índice 1 a 4)
 let fotosAeronaves = { 1: [], 2: [], 3: [], 4: [] };
 
 document.getElementById("formInicio").addEventListener("submit", (e) => {
@@ -319,6 +318,7 @@ function cargarChecklist() {
   if (tipo !== "Curso") {
     contenedor.innerHTML += `<h3><i class="fas fa-shield-alt"></i> Liberación de Aeronaves</h3>`;
     for (let i = 1; i <= 4; i++) {
+      // CORRECCIÓN 2: Eliminado "capture=camera" para permitir elegir Galería
       contenedor.innerHTML += `
         <div class="check-item-lib">
           <input type="text" id="matEquipo${i}" placeholder="Matrícula Equipo ${i}">
@@ -326,7 +326,7 @@ function cargarChecklist() {
           <button type="button" class="btn-camera" onclick="document.getElementById('file${i}').click()">
             <i class="fas fa-camera"></i> Añadir Foto de Evidencia
           </button>
-          <input type="file" id="file${i}" accept="image/*" capture="camera" style="display:none" onchange="addFoto(${i})">
+          <input type="file" id="file${i}" accept="image/*" style="display:none" onchange="addFoto(${i})">
           
           <div id="galeria${i}" class="galeria-lib"></div>
 
@@ -338,7 +338,6 @@ function cargarChecklist() {
         </div>`;
     }
     
-    // Listeners para confirmación
     setTimeout(() => {
       for (let i = 1; i <= 4; i++) {
         document.getElementById(`checkLib${i}`).addEventListener("click", function(e) {
@@ -368,6 +367,7 @@ function cargarChecklist() {
   });
 }
 
+// CORRECCIÓN 1: Función addFoto permite múltiples fotos acumulando en el array
 function addFoto(i) {
   const fileInput = document.getElementById(`file${i}`);
   const file = fileInput.files[0];
@@ -377,7 +377,7 @@ function addFoto(i) {
   reader.onloadend = function() {
     fotosAeronaves[i].push(reader.result);
     renderGaleria(i);
-    fileInput.value = ""; // Reset para poder tomar otra
+    fileInput.value = ""; // Se limpia el input para permitir capturar otra foto de inmediato
   }
   reader.readAsDataURL(file);
 }
@@ -505,7 +505,6 @@ function exportarPDF(){
     headStyles: { fillColor: [30, 41, 59] }
   });
 
-  // Sección de fotos organizada por fecha y equipo
   let y = doc.lastAutoTable.finalY + 15;
   h.forEach(reg => {
     if(reg.matriculas) {
@@ -532,7 +531,6 @@ function exportarPDF(){
   doc.save(`Reporte_QC_${mesClave}.pdf`);
 }
 
-// Funciones de navegación (sin cambios)
 function filtrarHistorial() {
   const busqueda = document.getElementById("buscadorHistorial").value.toLowerCase();
   const tarjetas = document.querySelectorAll("#listaHistorial > div");
