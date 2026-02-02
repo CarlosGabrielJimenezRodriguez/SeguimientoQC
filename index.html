@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Seguimiento Laboral QC</title>
 <link rel="manifest" href="manifest.json">
-
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
   :root {
@@ -194,7 +193,7 @@
         <input type="date" id="fecha" required>
         <input type="time" id="horaEntrada" required>
       </div>
-      <button type="submit"><i class="fas fa-play"></i> Iniciar jornada</button>
+      <button type="submit" id="btnIniciar"><i class="fas fa-play"></i> Iniciar jornada</button>
       <button type="button" onclick="irAHistorial()" class="btn-outline"><i class="fas fa-history"></i> Historial</button>
     </form>
   </section>
@@ -267,14 +266,23 @@ const checklistTiempoExtra = ["Forms tiempo extra"];
 
 let fotosAeronaves = { 1: [], 2: [], 3: [], 4: [] };
 
-document.getElementById("formInicio").addEventListener("submit", (e) => {
+// CORRECCIÓN DE INICIO DE JORNADA
+document.getElementById("formInicio").addEventListener("submit", function(e) {
   e.preventDefault();
-  localStorage.setItem("colaboradorQC", JSON.stringify({
-    nombre: document.getElementById("nombre").value,
-    empleado: document.getElementById("empleado").value,
+  
+  const datos = {
+    nombre: document.getElementById("nombre").value.trim(),
+    empleado: document.getElementById("empleado").value.trim(),
     fecha: document.getElementById("fecha").value,
     horaEntrada: document.getElementById("horaEntrada").value
-  }));
+  };
+
+  if(!datos.nombre || !datos.empleado || !datos.fecha || !datos.horaEntrada) {
+    alert("Por favor completa todos los campos.");
+    return;
+  }
+
+  localStorage.setItem("colaboradorQC", JSON.stringify(datos));
   document.getElementById("pantallaInicio").style.display = "none";
   document.getElementById("pantallaMenu").style.display = "block";
 });
@@ -321,14 +329,11 @@ function cargarChecklist() {
       contenedor.innerHTML += `
         <div class="check-item-lib">
           <input type="text" id="matEquipo${i}" placeholder="Matrícula Equipo ${i}">
-          
           <button type="button" class="btn-camera" onclick="document.getElementById('file${i}').click()">
             <i class="fas fa-camera"></i> Añadir Foto / Galería
           </button>
           <input type="file" id="file${i}" accept="image/*" capture="environment" style="display:none" onchange="addFoto(${i})">
-          
           <div id="galeria${i}" class="galeria-lib"></div>
-
           <div style="display:flex; align-items:center; gap:10px;">
             <input type="checkbox" id="checkLib${i}">
             <label for="checkLib${i}" style="font-size:12px;">Confirmar liberación segura</label>
@@ -373,7 +378,6 @@ function addFoto(i) {
 
   const reader = new FileReader();
   reader.onloadend = function() {
-    // Optimización de imagen para no saturar memoria
     const img = new Image();
     img.src = reader.result;
     img.onload = function() {
@@ -384,7 +388,6 @@ function addFoto(i) {
         canvas.width = MAX_WIDTH;
         canvas.height = img.height * scale;
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        
         fotosAeronaves[i].push(canvas.toDataURL('image/jpeg', 0.7));
         renderGaleria(i);
         fileInput.value = ""; 
@@ -476,7 +479,6 @@ function cargarHistorialMensual() {
         <small style="color:var(--muted)">Fin: ${reg.horaFin}</small>
       </div>
       <strong style="font-size:14px;">${reg.jornada} ${reg.matriculas ? '[' + reg.matriculas.map(m => m.id).join(', ') + ']' : ''}</strong>
-      
       ${reg.matriculas ? reg.matriculas.map(m => `
         <div style="margin-top:8px;">
           <small style="color:var(--accent)">${m.id} (${m.hora}):</small>
@@ -485,7 +487,6 @@ function cargarHistorialMensual() {
           </div>
         </div>
       `).join('') : ''}
-
       <p style="font-size:12px; color:var(--muted); margin-top:8px;">${reg.observaciones || "Sin observaciones"}</p>
       <button onclick="eliminarRegistro(${i})" style="padding:5px; background:#ef4444; font-size:10px; height:auto; width:60px; margin-top:10px;">Borrar</button>
     </div>`).join("");
@@ -547,4 +548,31 @@ function exportarPDF(){
 function filtrarHistorial() {
   const busqueda = document.getElementById("buscadorHistorial").value.toLowerCase();
   const tarjetas = document.querySelectorAll("#listaHistorial > div");
-  tarjetas.forEach(t => t.style.
+  tarjetas.forEach(t => t.style.display = t.innerText.toLowerCase().includes(busqueda) ? "block" : "none");
+}
+function irAHistorial(){
+  document.querySelectorAll("section").forEach(s => s.style.display = "none");
+  document.getElementById("pantallaHistorial").style.display = "block";
+  cargarHistorialMensual();
+}
+function eliminarRegistro(i) {
+  const mesClave = `historialQC_${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}`;
+  let h = JSON.parse(localStorage.getItem(mesClave));
+  h.splice(i, 1);
+  localStorage.setItem(mesClave, JSON.stringify(h));
+  cargarHistorialMensual();
+}
+function volverAlInicio(){ document.getElementById("pantallaMenu").style.display = "none"; document.getElementById("pantallaInicio").style.display = "block"; }
+function volverAJornada(){ document.getElementById("pantallaTiempoExtra").style.display = "none"; document.getElementById("pantallaMenu").style.display = "block"; }
+function volverDesdeChecklist(){ document.getElementById("pantallaChecklist").style.display = "none"; document.getElementById("pantallaMenu").style.display = "block"; }
+function nuevaJornada(){ location.reload(); }
+function eliminarHistorial(){
+  if(confirm("¿Borrar todo el mes?")){
+    const mesClave = `historialQC_${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,"0")}`;
+    localStorage.removeItem(mesClave);
+    cargarHistorialMensual();
+  }
+}
+</script>
+</body>
+</html>
