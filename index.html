@@ -318,15 +318,14 @@ function cargarChecklist() {
   if (tipo !== "Curso") {
     contenedor.innerHTML += `<h3><i class="fas fa-shield-alt"></i> Liberación de Aeronaves</h3>`;
     for (let i = 1; i <= 4; i++) {
-      // CORRECCIÓN 2: Eliminado "capture=camera" para permitir elegir Galería
       contenedor.innerHTML += `
         <div class="check-item-lib">
           <input type="text" id="matEquipo${i}" placeholder="Matrícula Equipo ${i}">
           
           <button type="button" class="btn-camera" onclick="document.getElementById('file${i}').click()">
-            <i class="fas fa-camera"></i> Añadir Foto de Evidencia
+            <i class="fas fa-camera"></i> Añadir Foto / Galería
           </button>
-          <input type="file" id="file${i}" accept="image/*" style="display:none" onchange="addFoto(${i})">
+          <input type="file" id="file${i}" accept="image/*" capture="environment" style="display:none" onchange="addFoto(${i})">
           
           <div id="galeria${i}" class="galeria-lib"></div>
 
@@ -367,7 +366,6 @@ function cargarChecklist() {
   });
 }
 
-// CORRECCIÓN 1: Función addFoto permite múltiples fotos acumulando en el array
 function addFoto(i) {
   const fileInput = document.getElementById(`file${i}`);
   const file = fileInput.files[0];
@@ -375,9 +373,22 @@ function addFoto(i) {
 
   const reader = new FileReader();
   reader.onloadend = function() {
-    fotosAeronaves[i].push(reader.result);
-    renderGaleria(i);
-    fileInput.value = ""; // Se limpia el input para permitir capturar otra foto de inmediato
+    // Optimización de imagen para no saturar memoria
+    const img = new Image();
+    img.src = reader.result;
+    img.onload = function() {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const MAX_WIDTH = 800;
+        const scale = MAX_WIDTH / img.width;
+        canvas.width = MAX_WIDTH;
+        canvas.height = img.height * scale;
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        
+        fotosAeronaves[i].push(canvas.toDataURL('image/jpeg', 0.7));
+        renderGaleria(i);
+        fileInput.value = ""; 
+    }
   }
   reader.readAsDataURL(file);
 }
@@ -422,6 +433,8 @@ function validarChecklist() {
   if ([...checks].some(c => !c.checked)) { alert("⚠️ Checklist incompleto."); return; }
 
   const colaborador = JSON.parse(localStorage.getItem("colaboradorQC"));
+  if(!colaborador) { alert("Error de sesión. Inicia de nuevo."); return; }
+
   const registro = {
     nombre: colaborador.nombre,
     empleado: colaborador.empleado,
@@ -534,31 +547,4 @@ function exportarPDF(){
 function filtrarHistorial() {
   const busqueda = document.getElementById("buscadorHistorial").value.toLowerCase();
   const tarjetas = document.querySelectorAll("#listaHistorial > div");
-  tarjetas.forEach(t => t.style.display = t.innerText.toLowerCase().includes(busqueda) ? "block" : "none");
-}
-function irAHistorial(){
-  document.querySelectorAll("section").forEach(s => s.style.display = "none");
-  document.getElementById("pantallaHistorial").style.display = "block";
-  cargarHistorialMensual();
-}
-function eliminarRegistro(i) {
-  const mesClave = `historialQC_${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}`;
-  let h = JSON.parse(localStorage.getItem(mesClave));
-  h.splice(i, 1);
-  localStorage.setItem(mesClave, JSON.stringify(h));
-  cargarHistorialMensual();
-}
-function volverAlInicio(){ document.getElementById("pantallaMenu").style.display = "none"; document.getElementById("pantallaInicio").style.display = "block"; }
-function volverAJornada(){ document.getElementById("pantallaTiempoExtra").style.display = "none"; document.getElementById("pantallaMenu").style.display = "block"; }
-function volverDesdeChecklist(){ document.getElementById("pantallaChecklist").style.display = "none"; document.getElementById("pantallaMenu").style.display = "block"; }
-function nuevaJornada(){ location.reload(); }
-function eliminarHistorial(){
-  if(confirm("¿Borrar todo el mes?")){
-    const mesClave = `historialQC_${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,"0")}`;
-    localStorage.removeItem(mesClave);
-    cargarHistorialMensual();
-  }
-}
-</script>
-</body>
-</html>
+  tarjetas.forEach(t => t.style.
