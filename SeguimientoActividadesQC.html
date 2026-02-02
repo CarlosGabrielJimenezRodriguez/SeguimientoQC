@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Seguimiento Laboral QC</title>
+<link rel="manifest" href="manifest.json">
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+  :root {
+    --bg: #0f172a;
+    --panel: rgba(30, 41, 59, 0.7);
+    --accent: #38bdf8;
+    --text: #f8fafc;
+    --muted: #94a3b8;
+    --card: #020617;
+  }
+
+  body {
+    margin: 0;
+    font-family: "Segoe UI", system-ui, sans-serif;
+    background: radial-gradient(circle at top, #1e293b, #0f172a);
+    background-attachment: fixed;
+    color: var(--text);
+    display: flex;
+    justify-content: center;
+    min-height: 100vh;
+  }
+
+  main {
+    width: 100%;
+    max-width: 420px;
+    margin: 15px;
+    background: var(--panel);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 24px;
+    padding: 20px;
+    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+
+  h1 { text-align: center; font-size: 20px; margin-bottom: 20px; color: var(--accent); }
+  h3 { color: var(--accent); font-size: 16px; margin-top: 25px; margin-bottom: 10px; }
+
+  form { display: grid; gap: 12px; }
+  label { font-size: 13px; color: var(--muted); font-weight: 600; margin-left: 5px; }
+
+  input, textarea {
+    background: #020617;
+    border: 1px solid #1e293b;
+    color: var(--text);
+    padding: 12px;
+    border-radius: 12px;
+    font-size: 15px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  button {
+    padding: 14px;
+    border: none;
+    border-radius: 14px;
+    background: var(--accent);
+    color: #020617;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  #listaChecklist > div {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    margin-bottom: 10px;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  #listaChecklist input[type="checkbox"] {
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+    margin: 0;
+    margin-top: 2px;
+    accent-color: var(--accent);
+  }
+
+  .check-item-lib {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px;
+    margin-top: 12px;
+    padding: 15px !important;
+    border: 1px solid #334155 !important;
+    background: rgba(56, 189, 248, 0.05) !important;
+    border-radius: 15px;
+  }
+
+  .check-item-lib input[type="text"] {
+    border: 1px solid var(--accent);
+    text-align: center;
+    font-weight: bold;
+    letter-spacing: 1px;
+  }
+
+  /* Galería de fotos dentro del item */
+  .galeria-lib {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 5px 0;
+  }
+  
+  .img-wrapper {
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .img-thumb { 
+    width: 60px; 
+    height: 60px; 
+    object-fit: cover; 
+    border-radius: 8px; 
+    border: 1px solid var(--accent);
+  }
+
+  .btn-remove-img {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #ef4444;
+    color: white;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    font-size: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    cursor: pointer;
+  }
+
+  .btn-camera {
+    background: #1e293b;
+    color: var(--accent);
+    padding: 10px;
+    font-size: 13px;
+    border: 1px dashed var(--accent);
+    border-radius: 10px;
+  }
+
+  .btn-outline { background: #020617; color: var(--text); border: 1px solid #1e293b; }
+
+  .stats-container { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+  .stat-card {
+    background: rgba(2, 6, 23, 0.5);
+    padding: 15px;
+    border-radius: 15px;
+    text-align: center;
+    border: 1px solid rgba(56, 189, 248, 0.2);
+  }
+  .stat-value { font-size: 1.5rem; font-weight: bold; display: block; color: var(--accent); }
+  .stat-label { font-size: 10px; color: var(--muted); text-transform: uppercase; }
+
+  section { animation: fadeIn 0.4s ease-in-out; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+
+<main>
+  <section id="pantallaInicio">
+    <h1><i class="fas fa-clipboard-check"></i> Seguimiento QC</h1>
+    <form id="formInicio">
+      <label>Colaborador</label>
+      <input id="nombre" placeholder="Nombre completo" required>
+      <label>No. Empleado</label>
+      <input id="empleado" placeholder="ID" required>
+      <label>Fecha y Entrada</label>
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+        <input type="date" id="fecha" required>
+        <input type="time" id="horaEntrada" required>
+      </div>
+      <button type="submit"><i class="fas fa-play"></i> Iniciar jornada</button>
+      <button type="button" onclick="irAHistorial()" class="btn-outline"><i class="fas fa-history"></i> Historial</button>
+    </form>
+  </section>
+
+  <section id="pantallaMenu" style="display:none;">
+    <h1>Tipo de jornada</h1>
+    <div class="menu-opciones">
+      <button onclick="seleccionarJornada('Diurno')" class="btn-outline"><i class="fas fa-sun"></i> Turno Diurno</button>
+      <button onclick="seleccionarJornada('Nocturno')" class="btn-outline"><i class="fas fa-moon"></i> Turno Nocturno</button>
+      <button onclick="seleccionarJornada('Curso')" class="btn-outline"><i class="fas fa-graduation-cap"></i> Capacitación</button>
+    </div>
+    <button onclick="volverAlInicio()" class="btn-outline"><i class="fas fa-arrow-left"></i> Regresar</button>
+  </section>
+
+  <section id="pantallaTiempoExtra" style="display:none;">
+    <h1>¿Es tiempo extra?</h1>
+    <button onclick="seleccionarTiempoExtra(true)"><i class="fas fa-check"></i> Sí, es extra</button>
+    <button onclick="seleccionarTiempoExtra(false)" class="btn-outline"><i class="fas fa-times"></i> No</button>
+    <button onclick="volverAJornada()" class="btn-outline"><i class="fas fa-arrow-left"></i> Regresar</button>
+  </section>
+
+  <section id="pantallaChecklist" style="display:none;">
+    <h1>Checklist del Turno</h1>
+    <div id="listaChecklist"></div>
+    <label style="margin-top:20px; display:block;">Observaciones Generales</label>
+    <textarea id="observacionesTurno" placeholder="Notas adicionales..."></textarea>
+    <button onclick="validarChecklist()"><i class="fas fa-save"></i> Finalizar Turno</button>
+    <button onclick="volverDesdeChecklist()" class="btn-outline"><i class="fas fa-arrow-left"></i> Regresar</button>
+  </section>
+
+  <section id="pantallaHistorial" style="display:none;">
+    <h1>Resumen Mensual</h1>
+    <input type="text" id="buscadorHistorial" onkeyup="filtrarHistorial()" placeholder="🔍 Buscar matrícula..." style="margin-bottom: 15px;">
+    <div class="stats-container">
+      <div class="stat-card"><i class="fas fa-calendar-alt"></i><span id="statJornadas" class="stat-value">0</span><span class="stat-label">Jornadas</span></div>
+      <div class="stat-card"><i class="fas fa-star"></i><span id="statExtra" class="stat-value">0</span><span class="stat-label">T. Extra</span></div>
+    </div>
+    <div id="listaHistorial"></div>
+    <button onclick="nuevaJornada()"><i class="fas fa-redo"></i> Nueva jornada</button>
+    <button onclick="exportarPDF()" style="background:#22c55e; color:#020617;"><i class="fas fa-file-pdf"></i> PDF</button>
+    <button onclick="eliminarHistorial()" style="background:#ef4444; color:white;"><i class="fas fa-trash-alt"></i> Borrar Mes</button>
+  </section>
+</main>
+
+<script>
+const checklistDiurno = [
+  "Checar entrada", "Hacer Clock in", "FORMS FATIGA (overtime)", "Revisar paso de turno",
+  "Asignación de trabajos QC", "Verificación de MARCHs", "Reporte de incoming",
+  "Correo de paso de almacén (AMOS)", "Solo lunes: entrega certificados incoming",
+  "Primero de mes: botiquínes HGR6/POS1", "Realizar incoming", "JUNTA 11:30 Revisar programación NLU,TLC, MEX", "Inspección de WO con apego a manuales",
+  "Herramientas calibrables WO", "Remanente trabajos abiertos", "Agregar tiempos AMOS",
+  "Correo paso turno nocturno", "FORMS paso de turno", "Horario siguiente día",
+  "Reporte turno diurno almacén", "Revision sellos WO", "No rutinarios", "Correos de WO requeridos", "Carga de SPOT CHECK",
+  "Liberar en Power Apps", "Pendientes almacén", "Realizar reportes NDT","AOG Realizar paso de turno y correo","FORMS OVERTIME", "FORMS PRIMA DOMINICAL/DIA FESTIVO",
+  "Cargar Viaticos", "Clock out", "Checar salida"
+];
+
+const checklistNocturno = [
+  "Checar entrada", "Hacer Clock in", "FORMS FATIGA (overtime)", "Revisar paso de turno",
+  "Asignación QC pernocta", "Efectividades, MTOW, DD, MEL, CDL", "Inspección de equipos NDT en base",
+  "Verificación MARCHs", "Realizar incoming", "Inspección de WO apego a manuales", "Herramientas calibrables en WO","Revision sellos WO",
+  "Remanente trabajos abiertos", "Agregar tiempos AMOS", "Correos de WO requeridos", "carga de SPOT CHECK",
+  "Correo paso de turno", "FORMS paso de turno", "Horario siguiente día", "Reporte turno diurno",
+  "No rutinarios", "Realizar reportes NDT","AOG Realizar paso de turno y correo","Liberar en Power Apps", "Pendientes almacén", "FORMS OVERTIME",
+  "FORMS PRIMA DOMINICAL/DIA FESTIVO", "Cargar Viaticos", "Clock out", "Checar salida"
+];
+
+const checklistCurso = ["TIA, ID Empresa, INE, licencia, Examen Medico","Check-in hotel/vuelo", "Verificar Links curso", "Al culminar realizar forms de cursos", "Check-out hotel/vuelo"];
+const checklistTiempoExtra = ["Forms tiempo extra"];
+
+// Almacén temporal de fotos por aeronave (índice 1 a 4)
+let fotosAeronaves = { 1: [], 2: [], 3: [], 4: [] };
+
+document.getElementById("formInicio").addEventListener("submit", (e) => {
+  e.preventDefault();
+  localStorage.setItem("colaboradorQC", JSON.stringify({
+    nombre: document.getElementById("nombre").value,
+    empleado: document.getElementById("empleado").value,
+    fecha: document.getElementById("fecha").value,
+    horaEntrada: document.getElementById("horaEntrada").value
+  }));
+  document.getElementById("pantallaInicio").style.display = "none";
+  document.getElementById("pantallaMenu").style.display = "block";
+});
+
+function seleccionarJornada(tipo){
+  localStorage.setItem("tipoJornadaQC", tipo);
+  document.getElementById("pantallaMenu").style.display = "none";
+  if(tipo === "Curso"){
+    localStorage.setItem("esTiempoExtraQC", "NO");
+    document.getElementById("pantallaChecklist").style.display = "block";
+    cargarChecklist();
+  } else {
+    document.getElementById("pantallaTiempoExtra").style.display = "block";
+  }
+}
+
+function seleccionarTiempoExtra(esExtra){
+  localStorage.setItem("esTiempoExtraQC", esExtra ? "SI" : "NO");
+  document.getElementById("pantallaTiempoExtra").style.display = "none";
+  document.getElementById("pantallaChecklist").style.display = "block";
+  cargarChecklist();
+}
+
+function cargarChecklist() {
+  const tipo = localStorage.getItem("tipoJornadaQC");
+  const esExtra = localStorage.getItem("esTiempoExtraQC") === "SI";
+  let checklist = tipo === "Diurno" ? [...checklistDiurno] : tipo === "Nocturno" ? [...checklistNocturno] : [...checklistCurso];
+  if(esExtra) checklist = checklist.concat(checklistTiempoExtra);
+
+  const contenedor = document.getElementById("listaChecklist");
+  contenedor.innerHTML = "";
+
+  checklist.forEach((item, index) => {
+    contenedor.innerHTML += `
+      <div>
+        <input type="checkbox" id="item${index}">
+        <label for="item${index}">${item} <small id="hora${index}"></small></label>
+      </div>`;
+  });
+
+  if (tipo !== "Curso") {
+    contenedor.innerHTML += `<h3><i class="fas fa-shield-alt"></i> Liberación de Aeronaves</h3>`;
+    for (let i = 1; i <= 4; i++) {
+      contenedor.innerHTML += `
+        <div class="check-item-lib">
+          <input type="text" id="matEquipo${i}" placeholder="Matrícula Equipo ${i}">
+          
+          <button type="button" class="btn-camera" onclick="document.getElementById('file${i}').click()">
+            <i class="fas fa-camera"></i> Añadir Foto de Evidencia
+          </button>
+          <input type="file" id="file${i}" accept="image/*" capture="camera" style="display:none" onchange="addFoto(${i})">
+          
+          <div id="galeria${i}" class="galeria-lib"></div>
+
+          <div style="display:flex; align-items:center; gap:10px;">
+            <input type="checkbox" id="checkLib${i}">
+            <label for="checkLib${i}" style="font-size:12px;">Confirmar liberación segura</label>
+          </div>
+          <small id="tsLib${i}" style="font-size:10px; color:var(--accent); font-weight:bold;"></small>
+        </div>`;
+    }
+    
+    // Listeners para confirmación
+    setTimeout(() => {
+      for (let i = 1; i <= 4; i++) {
+        document.getElementById(`checkLib${i}`).addEventListener("click", function(e) {
+          const matInput = document.getElementById(`matEquipo${i}`);
+          const mat = matInput.value;
+          if (!mat && this.checked) {
+            alert("⚠️ Escriba la matrícula antes.");
+            this.checked = false;
+            return;
+          }
+          if (this.checked) {
+            if (confirm(`🛡️ CONTROL QC: ${mat.toUpperCase()}\n\n¿Confirmas los puntos críticos?\n\n1. Diferidos OK.\n2. Bitácoras cerradas.\n3. Tareas abiertas.\n4. Componentes asentados.\n5. Cierre diferido.\n6. Trabajos asentados.\n7. Equipo emergencia.\n8. Sin condiciones limitantes.`)) {
+                const ahora = new Date();
+                matInput.dataset.horaLib = ahora.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                document.getElementById(`tsLib${i}`).innerText = "Liberado: " + matInput.dataset.horaLib;
+            } else { this.checked = false; }
+          } else { document.getElementById(`tsLib${i}`).innerText = ""; }
+        });
+      }
+    }, 100);
+  }
+
+  checklist.forEach((_, index) => {
+    document.getElementById(`item${index}`).addEventListener("change", function() {
+      if (this.checked) document.getElementById(`hora${index}`).innerText = " ✔ " + new Date().toLocaleTimeString();
+    });
+  });
+}
+
+function addFoto(i) {
+  const fileInput = document.getElementById(`file${i}`);
+  const file = fileInput.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onloadend = function() {
+    fotosAeronaves[i].push(reader.result);
+    renderGaleria(i);
+    fileInput.value = ""; // Reset para poder tomar otra
+  }
+  reader.readAsDataURL(file);
+}
+
+function renderGaleria(i) {
+  const galeria = document.getElementById(`galeria${i}`);
+  galeria.innerHTML = fotosAeronaves[i].map((src, index) => `
+    <div class="img-wrapper">
+      <img src="${src}" class="img-thumb">
+      <button class="btn-remove-img" onclick="removeFoto(${i}, ${index})">×</button>
+    </div>
+  `).join('');
+}
+
+function removeFoto(i, index) {
+  fotosAeronaves[i].splice(index, 1);
+  renderGaleria(i);
+}
+
+function validarChecklist() {
+  const tipo = localStorage.getItem("tipoJornadaQC");
+  let matriculasData = [];
+
+  if (tipo !== "Curso") {
+    for (let i = 1; i <= 4; i++) {
+      const matInput = document.getElementById(`matEquipo${i}`);
+      const mat = matInput.value.trim();
+      const chk = document.getElementById(`checkLib${i}`).checked;
+      if (mat !== "" && !chk) { alert(`⚠️ Confirme la liberación de ${mat}`); return; }
+      if (mat !== "") {
+          matriculasData.push({
+              id: mat.toUpperCase(),
+              hora: matInput.dataset.horaLib || "--:--",
+              fotos: [...fotosAeronaves[i]]
+          });
+      }
+    }
+    if (matriculasData.length === 0) { alert("⚠️ Libere al menos una aeronave."); return; }
+  }
+
+  const checks = document.querySelectorAll("#listaChecklist input[type='checkbox']:not([id^='checkLib'])");
+  if ([...checks].some(c => !c.checked)) { alert("⚠️ Checklist incompleto."); return; }
+
+  const colaborador = JSON.parse(localStorage.getItem("colaboradorQC"));
+  const registro = {
+    nombre: colaborador.nombre,
+    empleado: colaborador.empleado,
+    fecha: colaborador.fecha,
+    jornada: tipo,
+    matriculas: matriculasData,
+    tiempoExtra: localStorage.getItem("esTiempoExtraQC"),
+    horaFin: new Date().toLocaleTimeString(),
+    observaciones: document.getElementById("observacionesTurno").value.trim()
+  };
+
+  const mesClave = `historialQC_${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,"0")}`;
+  const historial = JSON.parse(localStorage.getItem(mesClave)) || [];
+  historial.push(registro);
+  localStorage.setItem(mesClave, JSON.stringify(historial));
+
+  alert("✅ Turno Finalizado");
+  irAHistorial();
+}
+
+function cargarHistorialMensual() {
+  const ahora = new Date();
+  const mesClave = `historialQC_${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, "0")}`;
+  const historial = JSON.parse(localStorage.getItem(mesClave)) || [];
+  
+  document.getElementById("statJornadas").innerText = historial.length;
+  document.getElementById("statExtra").innerText = historial.filter(r => r.tiempoExtra === "SI").length;
+  
+  const contenedor = document.getElementById("listaHistorial");
+  if (historial.length === 0) {
+    contenedor.innerHTML = "<p style='text-align:center; color:var(--muted);'>No hay registros.</p>";
+    return;
+  }
+  
+  contenedor.innerHTML = historial.map((reg, i) => `
+    <div style="padding:15px; border:1px solid #1e293b; margin-bottom:12px; border-radius:15px; background:rgba(2, 6, 23, 0.8);">
+      <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+        <small style="color:var(--accent); font-weight:bold;">${reg.fecha}</small>
+        <small style="color:var(--muted)">Fin: ${reg.horaFin}</small>
+      </div>
+      <strong style="font-size:14px;">${reg.jornada} ${reg.matriculas ? '[' + reg.matriculas.map(m => m.id).join(', ') + ']' : ''}</strong>
+      
+      ${reg.matriculas ? reg.matriculas.map(m => `
+        <div style="margin-top:8px;">
+          <small style="color:var(--accent)">${m.id} (${m.hora}):</small>
+          <div style="display:flex; gap:5px; margin-top:3px; overflow-x:auto;">
+            ${m.fotos.map(f => `<img src="${f}" style="height:35px; border-radius:4px;">`).join('')}
+          </div>
+        </div>
+      `).join('') : ''}
+
+      <p style="font-size:12px; color:var(--muted); margin-top:8px;">${reg.observaciones || "Sin observaciones"}</p>
+      <button onclick="eliminarRegistro(${i})" style="padding:5px; background:#ef4444; font-size:10px; height:auto; width:60px; margin-top:10px;">Borrar</button>
+    </div>`).join("");
+}
+
+function exportarPDF(){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  const ahora = new Date();
+  const mesClave = `historialQC_${ahora.getFullYear()}-${String(ahora.getMonth()+1).padStart(2,"0")}`;
+  const h = JSON.parse(localStorage.getItem(mesClave)) || [];
+  if(h.length === 0){ alert("No hay datos"); return; }
+
+  doc.setFontSize(16);
+  doc.setTextColor(56, 189, 248);
+  doc.text("REPORTE MENSUAL DE SEGUIMIENTO QC", 14, 20);
+
+  const body = h.map(r => [
+    r.fecha, 
+    r.jornada + (r.matriculas ? "\n" + r.matriculas.map(m => m.id + " (" + m.hora + ")").join(", ") : ""), 
+    r.tiempoExtra, 
+    r.observaciones || "—"
+  ]);
+
+  doc.autoTable({
+    startY: 30,
+    head: [['Fecha', 'Jornada / Equipos', 'Extra', 'Observaciones']],
+    body: body,
+    styles: { fontSize: 8 },
+    headStyles: { fillColor: [30, 41, 59] }
+  });
+
+  // Sección de fotos organizada por fecha y equipo
+  let y = doc.lastAutoTable.finalY + 15;
+  h.forEach(reg => {
+    if(reg.matriculas) {
+      reg.matriculas.forEach(m => {
+        if(m.fotos.length > 0) {
+          if(y > 240) { doc.addPage(); y = 20; }
+          doc.setFontSize(10);
+          doc.setTextColor(0);
+          doc.text(`Evidencias: ${reg.fecha} - ${m.id}`, 14, y);
+          y += 5;
+          let x = 14;
+          m.fotos.forEach(foto => {
+            if(x > 160) { x = 14; y += 35; }
+            if(y > 260) { doc.addPage(); y = 20; x = 14; }
+            doc.addImage(foto, 'JPEG', x, y, 30, 30);
+            x += 35;
+          });
+          y += 40;
+        }
+      });
+    }
+  });
+
+  doc.save(`Reporte_QC_${mesClave}.pdf`);
+}
+
+// Funciones de navegación (sin cambios)
+function filtrarHistorial() {
+  const busqueda = document.getElementById("buscadorHistorial").value.toLowerCase();
+  const tarjetas = document.querySelectorAll("#listaHistorial > div");
+  tarjetas.forEach(t => t.style.display = t.innerText.toLowerCase().includes(busqueda) ? "block" : "none");
+}
+function irAHistorial(){
+  document.querySelectorAll("section").forEach(s => s.style.display = "none");
+  document.getElementById("pantallaHistorial").style.display = "block";
+  cargarHistorialMensual();
+}
+function eliminarRegistro(i) {
+  const mesClave = `historialQC_${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}`;
+  let h = JSON.parse(localStorage.getItem(mesClave));
+  h.splice(i, 1);
+  localStorage.setItem(mesClave, JSON.stringify(h));
+  cargarHistorialMensual();
+}
+function volverAlInicio(){ document.getElementById("pantallaMenu").style.display = "none"; document.getElementById("pantallaInicio").style.display = "block"; }
+function volverAJornada(){ document.getElementById("pantallaTiempoExtra").style.display = "none"; document.getElementById("pantallaMenu").style.display = "block"; }
+function volverDesdeChecklist(){ document.getElementById("pantallaChecklist").style.display = "none"; document.getElementById("pantallaMenu").style.display = "block"; }
+function nuevaJornada(){ location.reload(); }
+function eliminarHistorial(){
+  if(confirm("¿Borrar todo el mes?")){
+    const mesClave = `historialQC_${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,"0")}`;
+    localStorage.removeItem(mesClave);
+    cargarHistorialMensual();
+  }
+}
+</script>
+</body>
+</html>
