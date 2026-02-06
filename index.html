@@ -256,7 +256,7 @@ const checklistNocturno = [
   "Asignación QC pernocta", "Efectividades, MTOW, DD, MEL, CDL", "Inspección de equipos NDT en base",
   "Verificación MARCHs", "Realizar incoming", "Inspección de WO apego a manuales", "Herramientas calibrables en WO","Revision sellos WO",
   "Remanente trabajos abiertos", "Agregar tiempos AMOS", "Correos de WO requeridos", "carga de SPOT CHECK",
-  "Correo paso de turno", "FORMS paso de turno", "Horario siguiente día", "Reporte turno diurno",
+  "Correo paso de turno", "FORMS paso de turno", "Horario siguiente día",
   "No rutinarios", "Realizar reportes NDT","AOG Realizar paso de turno y correo","Liberar en Power Apps", "Pendientes almacén", "FORMS OVERTIME",
   "FORMS PRIMA DOMINICAL/DIA FESTIVO", "Cargar Viaticos", "Clock out", "Checar salida"
 ];
@@ -353,7 +353,7 @@ function cargarChecklist() {
             return;
           }
           if (this.checked) {
-            if (confirm(`🛡️ CONTROL QC: ${mat.toUpperCase()}\n\n¿Confirmas los puntos críticos?\n\n1. Diferidos con vigencia.\n2. Bitácora Mantto/Sobrecargos cerradas al ultimo folio.\n3. Tareas abiertas sin remanente .\n4. Componentes cambiados asentados.\n5. Cierre diferido en bitacoras.\n6. Todos los trabajos asentados correctamente, aceites.\n7. Equipo emergencia verificado.\n8. Certificado Aeronavegabilidad vigente. \n9. Sin reportes pasados abiertos.\n10. Sin limitantes para liberacion.`)) {
+            if (confirm(`🛡️ CONTROL QC: ${mat.toUpperCase()}\n\n¿Confirmas los puntos críticos?\n\n1. Diferidos con vigencia.\n2. Bitácora Mantto/Sobrecargos cerradas al ultimo folio.\n3. Tareas abiertas sin remanente .\n4. Componentes cambiados asentados.\n5. Cierre diferido en bitacoras.\n6. Todos los trabajos asentados correctamente, aceites.\n7. Equipo emergencia verificado.\n8. Certificado Aeronavegabilidad vigente. \n9. Sin reportes pasados abiertos.\n10. Niveles HYD,OXY,OIL .\n11. Accesos cerrados ENG, C/B .\n12. Sin limitantes para liberacion.`)) {
                 const ahora = new Date();
                 matInput.dataset.horaLib = ahora.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                 document.getElementById(`tsLib${i}`).innerText = "Liberado: " + matInput.dataset.horaLib;
