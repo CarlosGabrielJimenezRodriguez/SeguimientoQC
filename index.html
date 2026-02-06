@@ -3,8 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Seguimiento Laboral QC</title>
-<link rel="manifest" href="manifest.json">
+<title>Seguimiento Laboral QC - Pro</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
   :root {
@@ -14,6 +13,8 @@
     --text: #f8fafc;
     --muted: #94a3b8;
     --card: #020617;
+    --danger: #ef4444;
+    --success: #22c55e;
   }
 
   body {
@@ -46,7 +47,7 @@
   form { display: grid; gap: 12px; }
   label { font-size: 13px; color: var(--muted); font-weight: 600; margin-left: 5px; }
 
-  input, textarea {
+  input, textarea, select {
     background: #020617;
     border: 1px solid #1e293b;
     color: var(--text);
@@ -73,6 +74,10 @@
     width: 100%;
     margin-top: 10px;
   }
+
+  .btn-outline { background: #020617; color: var(--text); border: 1px solid #1e293b; }
+  .btn-danger { background: var(--danger); color: white; }
+  .btn-success { background: var(--success); color: #020617; }
 
   #listaChecklist > div {
     display: flex;
@@ -120,60 +125,23 @@
     min-height: 20px;
   }
   
-  .img-wrapper {
-    position: relative;
-    flex-shrink: 0;
-  }
+  .img-wrapper { position: relative; flex-shrink: 0; }
+  .img-thumb { width: 60px; height: 60px; object-fit: cover; border-radius: 8px; border: 1px solid var(--accent); }
+  .btn-remove-img { position: absolute; top: -5px; right: -5px; background: var(--danger); color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; border: none; }
 
-  .img-thumb { 
-    width: 60px; 
-    height: 60px; 
-    object-fit: cover; 
-    border-radius: 8px; 
-    border: 1px solid var(--accent);
-  }
-
-  .btn-remove-img {
-    position: absolute;
-    top: -5px;
-    right: -5px;
-    background: #ef4444;
-    color: white;
-    border-radius: 50%;
-    width: 18px;
-    height: 18px;
-    font-size: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: none;
-    cursor: pointer;
-  }
-
-  .btn-camera {
-    background: #1e293b;
-    color: var(--accent);
-    padding: 10px;
-    font-size: 13px;
-    border: 1px dashed var(--accent);
-    border-radius: 10px;
-  }
-
-  .btn-outline { background: #020617; color: var(--text); border: 1px solid #1e293b; }
+  .btn-camera { background: #1e293b; color: var(--accent); padding: 10px; font-size: 13px; border: 1px dashed var(--accent); border-radius: 10px; }
 
   .stats-container { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
-  .stat-card {
-    background: rgba(2, 6, 23, 0.5);
-    padding: 15px;
-    border-radius: 15px;
-    text-align: center;
-    border: 1px solid rgba(56, 189, 248, 0.2);
-  }
+  .stat-card { background: rgba(2, 6, 23, 0.5); padding: 15px; border-radius: 15px; text-align: center; border: 1px solid rgba(56, 189, 248, 0.2); }
   .stat-value { font-size: 1.5rem; font-weight: bold; display: block; color: var(--accent); }
   .stat-label { font-size: 10px; color: var(--muted); text-transform: uppercase; }
 
   section { animation: fadeIn 0.4s ease-in-out; }
   @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* Estilos específicos para el Editor */
+  .editor-item { display: flex; gap: 8px; margin-bottom: 8px; animation: slideIn 0.2s ease-out; }
+  @keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
@@ -194,8 +162,28 @@
         <input type="time" id="horaEntrada" required>
       </div>
       <button type="submit" id="btnIniciar"><i class="fas fa-play"></i> Iniciar jornada</button>
-      <button type="button" onclick="irAHistorial()" class="btn-outline"><i class="fas fa-history"></i> Historial</button>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <button type="button" onclick="irAHistorial()" class="btn-outline"><i class="fas fa-history"></i> Historial</button>
+        <button type="button" onclick="irAConfig()" class="btn-outline" style="border-color: #475569;"><i class="fas fa-cog"></i> Configurar</button>
+      </div>
     </form>
+  </section>
+
+  <section id="pantallaConfig" style="display:none;">
+    <h1><i class="fas fa-tasks"></i> Editar Checklists</h1>
+    <label>Seleccionar Lista</label>
+    <select id="selectTipoConfig" onchange="renderEditor()" style="margin-bottom: 15px;">
+        <option value="Diurno">Turno Diurno</option>
+        <option value="Nocturno">Turno Nocturno</option>
+        <option value="Curso">Capacitación</option>
+        <option value="Extra">Tiempo Extra</option>
+    </select>
+    
+    <div id="editorTareas" style="max-height: 300px; overflow-y: auto; margin-bottom: 15px; padding-right: 5px;"></div>
+    
+    <button onclick="agregarTarea()" class="btn-outline"><i class="fas fa-plus"></i> Añadir Tarea</button>
+    <button onclick="guardarConfig()" class="btn-success"><i class="fas fa-save"></i> Guardar Cambios</button>
+    <button onclick="volverAlInicioDesdeConfig()" class="btn-outline"><i class="fas fa-arrow-left"></i> Regresar</button>
   </section>
 
   <section id="pantallaMenu" style="display:none;">
@@ -233,55 +221,86 @@
     </div>
     <div id="listaHistorial"></div>
     <button onclick="nuevaJornada()"><i class="fas fa-redo"></i> Nueva jornada</button>
-    <button onclick="exportarPDF()" style="background:#22c55e; color:#020617;"><i class="fas fa-file-pdf"></i> PDF</button>
-    <button onclick="eliminarHistorial()" style="background:#ef4444; color:white;"><i class="fas fa-trash-alt"></i> Borrar Mes</button>
+    <button onclick="exportarPDF()" class="btn-success"><i class="fas fa-file-pdf"></i> PDF</button>
+    <button onclick="eliminarHistorial()" class="btn-danger"><i class="fas fa-trash-alt"></i> Borrar Mes</button>
   </section>
 </main>
 
 <script>
-const checklistDiurno = [
-  "Checar entrada", "Hacer Clock in", "FORMS FATIGA (overtime)", "Revisar paso de turno",
-  "Asignación de trabajos QC", "Verificación de MARCHs", "Reporte de incoming",
-  "Correo de paso de almacén (AMOS)", "Solo lunes: entrega certificados incoming",
-  "Primero de mes: botiquínes HGR6/POS1", "Realizar incoming", "JUNTA 11:30 Revisar programación NLU,TLC, MEX", "Inspección de WO con apego a manuales",
-  "Herramientas calibrables WO", "Remanente trabajos abiertos", "Agregar tiempos AMOS",
-  "Correo paso turno nocturno", "FORMS paso de turno", "Horario siguiente día",
-  "Reporte turno diurno almacén", "Revision sellos WO", "No rutinarios", "Correos de WO requeridos", "Carga de SPOT CHECK",
-  "Liberar en Power Apps", "Pendientes almacén", "Realizar reportes NDT","AOG Realizar paso de turno y correo","FORMS OVERTIME", "FORMS PRIMA DOMINICAL/DIA FESTIVO",
-  "Cargar Viaticos", "Clock out", "Checar salida"
-];
+// --- CONFIGURACIÓN DE CHECKLISTS ---
+const checklistsBase = {
+  Diurno: [
+    "Checar entrada", "Hacer Clock in", "FORMS FATIGA (overtime)", "Revisar paso de turno",
+    "Asignación de trabajos QC", "Verificación de MARCHs", "Reporte de incoming",
+    "Correo de paso de almacén (AMOS)", "Solo lunes: entrega certificados incoming",
+    "Primero de mes: botiquínes HGR6/POS1", "Realizar incoming", "JUNTA 11:30 Revisar programación NLU,TLC, MEX", "Inspección de WO con apego a manuales",
+    "Herramientas calibrables WO", "Remanente trabajos abiertos", "Agregar tiempos AMOS",
+    "Correo paso turno nocturno", "FORMS paso de turno", "Horario siguiente día",
+    "Reporte turno diurno almacén", "Revision sellos WO", "No rutinarios", "Correos de WO requeridos", "Carga de SPOT CHECK",
+    "Liberar en Power Apps", "Pendientes almacén", "Realizar reportes NDT","AOG Realizar paso de turno y correo","FORMS OVERTIME", "FORMS PRIMA DOMINICAL/DIA FESTIVO",
+    "Cargar Viaticos", "Clock out", "Checar salida"
+  ],
+  Nocturno: [
+    "Checar entrada", "Hacer Clock in", "FORMS FATIGA (overtime)", "Revisar paso de turno",
+    "Asignación QC pernocta", "Efectividades, MTOW, DD, MEL, CDL", "Inspección de equipos NDT en base",
+    "Verificación MARCHs", "Realizar incoming", "Inspección de WO apego a manuales", "Herramientas calibrables en WO","Revision sellos WO",
+    "Remanente trabajos abiertos", "Agregar tiempos AMOS", "Correos de WO requeridos", "carga de SPOT CHECK",
+    "Correo paso de turno", "FORMS paso de turno", "Horario siguiente día",
+    "No rutinarios", "Realizar reportes NDT","AOG Realizar paso de turno y correo","Liberar en Power Apps", "Pendientes almacén", "FORMS OVERTIME",
+    "FORMS PRIMA DOMINICAL/DIA FESTIVO", "Cargar Viaticos", "Clock out", "Checar salida"
+  ],
+  Curso: ["TIA, ID Empresa, INE, licencia, Examen Medico","Check-in hotel/vuelo", "Verificar Links curso", "Al culminar realizar forms de cursos", "Check-out hotel/vuelo"],
+  Extra: ["Forms tiempo extra"]
+};
 
-const checklistNocturno = [
-  "Checar entrada", "Hacer Clock in", "FORMS FATIGA (overtime)", "Revisar paso de turno",
-  "Asignación QC pernocta", "Efectividades, MTOW, DD, MEL, CDL", "Inspección de equipos NDT en base",
-  "Verificación MARCHs", "Realizar incoming", "Inspección de WO apego a manuales", "Herramientas calibrables en WO","Revision sellos WO",
-  "Remanente trabajos abiertos", "Agregar tiempos AMOS", "Correos de WO requeridos", "carga de SPOT CHECK",
-  "Correo paso de turno", "FORMS paso de turno", "Horario siguiente día",
-  "No rutinarios", "Realizar reportes NDT","AOG Realizar paso de turno y correo","Liberar en Power Apps", "Pendientes almacén", "FORMS OVERTIME",
-  "FORMS PRIMA DOMINICAL/DIA FESTIVO", "Cargar Viaticos", "Clock out", "Checar salida"
-];
-
-const checklistCurso = ["TIA, ID Empresa, INE, licencia, Examen Medico","Check-in hotel/vuelo", "Verificar Links curso", "Al culminar realizar forms de cursos", "Check-out hotel/vuelo"];
-const checklistTiempoExtra = ["Forms tiempo extra"];
-
+let misChecklists = JSON.parse(localStorage.getItem("configChecklistsQC")) || checklistsBase;
 let fotosAeronaves = { 1: [], 2: [], 3: [], 4: [] };
 
-// CORRECCIÓN DE INICIO DE JORNADA
+// --- LÓGICA DEL EDITOR ---
+function irAConfig() {
+    document.getElementById("pantallaInicio").style.display = "none";
+    document.getElementById("pantallaConfig").style.display = "block";
+    renderEditor();
+}
+
+function renderEditor() {
+    const tipo = document.getElementById("selectTipoConfig").value;
+    const contenedor = document.getElementById("editorTareas");
+    contenedor.innerHTML = "";
+    
+    misChecklists[tipo].forEach((tarea, index) => {
+        contenedor.innerHTML += `
+            <div class="editor-item">
+                <input type="text" value="${tarea}" onchange="actualizarTarea('${tipo}', ${index}, this.value)">
+                <button onclick="eliminarTarea('${tipo}', ${index})" style="width:45px; background:var(--danger); margin:0; padding:0;"><i class="fas fa-trash"></i></button>
+            </div>
+        `;
+    });
+}
+
+function actualizarTarea(tipo, index, valor) { misChecklists[tipo][index] = valor; }
+function eliminarTarea(tipo, index) { misChecklists[tipo].splice(index, 1); renderEditor(); }
+function agregarTarea() { const tipo = document.getElementById("selectTipoConfig").value; misChecklists[tipo].push("Nueva tarea..."); renderEditor(); }
+
+function guardarConfig() {
+    localStorage.setItem("configChecklistsQC", JSON.stringify(misChecklists));
+    alert("✅ Listas actualizadas.");
+}
+
+function volverAlInicioDesdeConfig() {
+    document.getElementById("pantallaConfig").style.display = "none";
+    document.getElementById("pantallaInicio").style.display = "block";
+}
+
+// --- LÓGICA DE NAVEGACIÓN Y FLUJO ---
 document.getElementById("formInicio").addEventListener("submit", function(e) {
   e.preventDefault();
-  
   const datos = {
     nombre: document.getElementById("nombre").value.trim(),
     empleado: document.getElementById("empleado").value.trim(),
     fecha: document.getElementById("fecha").value,
     horaEntrada: document.getElementById("horaEntrada").value
   };
-
-  if(!datos.nombre || !datos.empleado || !datos.fecha || !datos.horaEntrada) {
-    alert("Por favor completa todos los campos.");
-    return;
-  }
-
   localStorage.setItem("colaboradorQC", JSON.stringify(datos));
   document.getElementById("pantallaInicio").style.display = "none";
   document.getElementById("pantallaMenu").style.display = "block";
@@ -309,8 +328,10 @@ function seleccionarTiempoExtra(esExtra){
 function cargarChecklist() {
   const tipo = localStorage.getItem("tipoJornadaQC");
   const esExtra = localStorage.getItem("esTiempoExtraQC") === "SI";
-  let checklist = tipo === "Diurno" ? [...checklistDiurno] : tipo === "Nocturno" ? [...checklistNocturno] : [...checklistCurso];
-  if(esExtra) checklist = checklist.concat(checklistTiempoExtra);
+  
+  // Obtener lista desde la configuración dinámica
+  let checklist = [...misChecklists[tipo]];
+  if(esExtra && tipo !== "Curso") checklist = checklist.concat(misChecklists.Extra);
 
   const contenedor = document.getElementById("listaChecklist");
   contenedor.innerHTML = "";
@@ -342,6 +363,7 @@ function cargarChecklist() {
         </div>`;
     }
     
+    // Listeners para las liberaciones
     setTimeout(() => {
       for (let i = 1; i <= 4; i++) {
         document.getElementById(`checkLib${i}`).addEventListener("click", function(e) {
@@ -353,7 +375,7 @@ function cargarChecklist() {
             return;
           }
           if (this.checked) {
-            if (confirm(`🛡️ CONTROL QC: ${mat.toUpperCase()}\n\n¿Confirmas los puntos críticos?\n\n1. Diferidos con vigencia.\n2. Bitácora Mantto/Sobrecargos cerradas al ultimo folio.\n3. Tareas abiertas sin remanente .\n4. Componentes cambiados asentados.\n5. Cierre diferido en bitacoras.\n6. Todos los trabajos asentados correctamente, aceites.\n7. Equipo emergencia verificado.\n8. Certificado Aeronavegabilidad vigente. \n9. Sin reportes pasados abiertos.\n10. Niveles HYD,OXY,OIL .\n11. Accesos cerrados ENG, C/B .\n12. Sin limitantes para liberacion.`)) {
+            if (confirm(`🛡️ CONTROL QC: ${mat.toUpperCase()}\n\n¿Confirmas los puntos críticos?\n\n1. Diferidos con vigencia.\n2. Bitácoras cerradas.\n3. Tareas sin remanente.\n4. Componentes asentados.\n5. Cierre diferido.\n6. Trabajos/Aceites OK.\n7. Eq. Emergencia verificado.\n8. Aeronavegabilidad vigente.\n9. Sin reportes abiertos.\n10. Niveles OK.\n11. Accesos cerrados.\n12. Sin limitantes.`)) {
                 const ahora = new Date();
                 matInput.dataset.horaLib = ahora.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                 document.getElementById(`tsLib${i}`).innerText = "Liberado: " + matInput.dataset.horaLib;
@@ -375,7 +397,6 @@ function addFoto(i) {
   const fileInput = document.getElementById(`file${i}`);
   const file = fileInput.files[0];
   if (!file) return;
-
   const reader = new FileReader();
   reader.onloadend = function() {
     const img = new Image();
@@ -406,10 +427,7 @@ function renderGaleria(i) {
   `).join('');
 }
 
-function removeFoto(i, index) {
-  fotosAeronaves[i].splice(index, 1);
-  renderGaleria(i);
-}
+function removeFoto(i, index) { fotosAeronaves[i].splice(index, 1); renderGaleria(i); }
 
 function validarChecklist() {
   const tipo = localStorage.getItem("tipoJornadaQC");
@@ -436,8 +454,6 @@ function validarChecklist() {
   if ([...checks].some(c => !c.checked)) { alert("⚠️ Checklist incompleto."); return; }
 
   const colaborador = JSON.parse(localStorage.getItem("colaboradorQC"));
-  if(!colaborador) { alert("Error de sesión. Inicia de nuevo."); return; }
-
   const registro = {
     nombre: colaborador.nombre,
     empleado: colaborador.empleado,
@@ -488,7 +504,7 @@ function cargarHistorialMensual() {
         </div>
       `).join('') : ''}
       <p style="font-size:12px; color:var(--muted); margin-top:8px;">${reg.observaciones || "Sin observaciones"}</p>
-      <button onclick="eliminarRegistro(${i})" style="padding:5px; background:#ef4444; font-size:10px; height:auto; width:60px; margin-top:10px;">Borrar</button>
+      <button onclick="eliminarRegistro(${i})" style="padding:5px; background:var(--danger); font-size:10px; height:auto; width:60px; margin-top:10px;">Borrar</button>
     </div>`).join("");
 }
 
@@ -500,9 +516,8 @@ function exportarPDF(){
   const h = JSON.parse(localStorage.getItem(mesClave)) || [];
   if(h.length === 0){ alert("No hay datos"); return; }
 
-  doc.setFontSize(16);
-  doc.setTextColor(56, 189, 248);
-  doc.text("REPORTE MENSUAL DE SEGUIMIENTO QC", 14, 20);
+  doc.setFontSize(16); doc.setTextColor(56, 189, 248);
+  doc.text("REPORTE MENSUAL QC", 14, 20);
 
   const body = h.map(r => [
     r.fecha, 
@@ -517,29 +532,6 @@ function exportarPDF(){
     body: body,
     styles: { fontSize: 8 },
     headStyles: { fillColor: [30, 41, 59] }
-  });
-
-  let y = doc.lastAutoTable.finalY + 15;
-  h.forEach(reg => {
-    if(reg.matriculas) {
-      reg.matriculas.forEach(m => {
-        if(m.fotos.length > 0) {
-          if(y > 240) { doc.addPage(); y = 20; }
-          doc.setFontSize(10);
-          doc.setTextColor(0);
-          doc.text(`Evidencias: ${reg.fecha} - ${m.id}`, 14, y);
-          y += 5;
-          let x = 14;
-          m.fotos.forEach(foto => {
-            if(x > 160) { x = 14; y += 35; }
-            if(y > 260) { doc.addPage(); y = 20; x = 14; }
-            doc.addImage(foto, 'JPEG', x, y, 30, 30);
-            x += 35;
-          });
-          y += 40;
-        }
-      });
-    }
   });
 
   doc.save(`Reporte_QC_${mesClave}.pdf`);
