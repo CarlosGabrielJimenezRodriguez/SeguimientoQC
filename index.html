@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Seguimiento Laboral QC - Ultra Calidad PDF</title>
+<title>Seguimiento Laboral QC - Final (Imágenes Grandes)</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
   :root {
@@ -580,7 +580,7 @@ function cargarHistorialMensual() {
     </div>`).join("");
 }
 
-// --- EXPORTAR CON IMÁGENES ULTRA GRANDES (40mm) ---
+// --- EXPORTAR CON IMÁGENES ULTRA GRANDES (FIX FINAL) ---
 function exportarPDF(){
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
@@ -603,7 +603,13 @@ function exportarPDF(){
     startY: 30,
     head: [['Fecha', 'Jornada / Equipos', 'Extra', 'Observaciones']],
     body: body,
-    // AQUÍ ESTÁ EL AJUSTE CLAVE: 50mm de alto para que quepa la foto de 40mm
+    // Forzamos columnas anchas para que quepan las imágenes
+    columnStyles: { 
+        0: {cellWidth: 25}, 
+        1: {minCellWidth: 45}, // Ancho mínimo para fotos de aeronaves
+        2: {cellWidth: 15}, 
+        3: {minCellWidth: 45} // Ancho mínimo para observaciones
+    },
     styles: { fontSize: 8, minCellHeight: 50 }, 
     headStyles: { fillColor: [30, 41, 59] },
     didDrawCell: function(data) {
@@ -615,16 +621,20 @@ function exportarPDF(){
             // Columna 1: Imágenes de Matriculas
             if (data.column.index === 1 && record.matriculas && Array.isArray(record.matriculas)) {
                 let xOffset = data.cell.x + 2;
-                // Posicionar imagen en la parte baja
-                const imgSize = 40; // 40mm (4 centímetros) - MUY GRANDE
+                const imgSize = 40; 
                 const yOffset = data.cell.y + data.cell.height - (imgSize + 2); 
 
                 record.matriculas.forEach(m => {
                     if (m.fotos && Array.isArray(m.fotos)) {
                         m.fotos.forEach(foto => {
-                            if (xOffset + imgSize < data.cell.x + data.cell.width) {
-                                try { doc.addImage(foto, 'JPEG', xOffset, yOffset, imgSize, imgSize); } catch(e){}
-                                xOffset += imgSize + 2;
+                            // Ajustamos para que se dibuje SIEMPRE, incluso si se sale un poco
+                            // Usamos Math.min para no pasarnos del ancho real de la celda si fuera necesario
+                            const widthDispo = data.cell.width - 4;
+                            const drawSize = Math.min(imgSize, widthDispo);
+
+                            if (xOffset + drawSize <= data.cell.x + data.cell.width + 5) {
+                                try { doc.addImage(foto, 'JPEG', xOffset, yOffset, drawSize, drawSize); } catch(e){}
+                                xOffset += drawSize + 2;
                             }
                         });
                     }
@@ -634,13 +644,16 @@ function exportarPDF(){
             // Columna 3: Imágenes de Observaciones
             if (data.column.index === 3 && record.fotosObservaciones && Array.isArray(record.fotosObservaciones)) {
                 let xOffset = data.cell.x + 2;
-                const imgSize = 40; // 40mm
+                const imgSize = 40; 
                 const yOffset = data.cell.y + data.cell.height - (imgSize + 2);
                 
                 record.fotosObservaciones.forEach(foto => {
-                    if (xOffset + imgSize < data.cell.x + data.cell.width) {
-                        try { doc.addImage(foto, 'JPEG', xOffset, yOffset, imgSize, imgSize); } catch(e){}
-                        xOffset += imgSize + 2;
+                    const widthDispo = data.cell.width - 4;
+                    const drawSize = Math.min(imgSize, widthDispo);
+                    
+                    if (xOffset + drawSize <= data.cell.x + data.cell.width + 5) {
+                        try { doc.addImage(foto, 'JPEG', xOffset, yOffset, drawSize, drawSize); } catch(e){}
+                        xOffset += drawSize + 2;
                     }
                 });
             }
