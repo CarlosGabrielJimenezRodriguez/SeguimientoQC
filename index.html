@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Seguimiento Laboral QC - Pro V2.3 (PDF Fix)</title>
+<title>Seguimiento Laboral QC - Final Pro</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
   :root {
@@ -301,7 +301,6 @@ const checklistsBase = {
 };
 
 let misChecklists = JSON.parse(localStorage.getItem("configChecklistsQC")) || checklistsBase;
-// Migración segura
 if (!misChecklists.Liberacion) {
     misChecklists.Liberacion = checklistsBase.Liberacion;
     localStorage.setItem("configChecklistsQC", JSON.stringify(misChecklists));
@@ -581,7 +580,7 @@ function cargarHistorialMensual() {
     </div>`).join("");
 }
 
-// --- EXPORTAR CON IMÁGENES (FIX ROBUSTO) ---
+// --- EXPORTAR CON IMÁGENES GRANDES ---
 function exportarPDF(){
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
@@ -604,7 +603,8 @@ function exportarPDF(){
     startY: 30,
     head: [['Fecha', 'Jornada / Equipos', 'Extra', 'Observaciones']],
     body: body,
-    styles: { fontSize: 8, minCellHeight: 25 },
+    // AQUÍ ESTÁ LA MAGIA: minCellHeight 35 y imgSize 22 (Antes eran 20 y 12)
+    styles: { fontSize: 8, minCellHeight: 35 }, 
     headStyles: { fillColor: [30, 41, 59] },
     didDrawCell: function(data) {
         if (data.section === 'body') {
@@ -615,8 +615,9 @@ function exportarPDF(){
             // Columna 1: Imágenes de Matriculas
             if (data.column.index === 1 && record.matriculas && Array.isArray(record.matriculas)) {
                 let xOffset = data.cell.x + 2;
-                const yOffset = data.cell.y + data.cell.height - 15;
-                const imgSize = 12;
+                // Calculamos para que queden abajo pero visibles
+                const yOffset = data.cell.y + data.cell.height - 24; 
+                const imgSize = 22; // TAMAÑO AUMENTADO
 
                 record.matriculas.forEach(m => {
                     if (m.fotos && Array.isArray(m.fotos)) {
@@ -633,8 +634,8 @@ function exportarPDF(){
             // Columna 3: Imágenes de Observaciones
             if (data.column.index === 3 && record.fotosObservaciones && Array.isArray(record.fotosObservaciones)) {
                 let xOffset = data.cell.x + 2;
-                const yOffset = data.cell.y + data.cell.height - 15;
-                const imgSize = 12;
+                const yOffset = data.cell.y + data.cell.height - 24;
+                const imgSize = 22; // TAMAÑO AUMENTADO
                 
                 record.fotosObservaciones.forEach(foto => {
                     if (xOffset + imgSize < data.cell.x + data.cell.width) {
