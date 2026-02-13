@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Seguimiento Laboral QC - Final (Imágenes Grandes)</title>
+<title>Seguimiento QC - Reporte Fotográfico</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
   :root {
@@ -580,7 +580,7 @@ function cargarHistorialMensual() {
     </div>`).join("");
 }
 
-// --- EXPORTAR CON IMÁGENES ULTRA GRANDES (FIX FINAL) ---
+// --- EXPORTAR: ESTRATEGIA ANEXO FOTOGRAFICO ---
 function exportarPDF(){
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
@@ -592,73 +592,78 @@ function exportarPDF(){
   doc.setFontSize(16); doc.setTextColor(56, 189, 248);
   doc.text("REPORTE MENSUAL QC", 14, 20);
 
+  // 1. TABLA SOLO DE TEXTO (Limpia y ordenada)
   const body = h.map(r => [
-    r.fecha, 
-    r.jornada + (r.matriculas ? "\n" + r.matriculas.map(m => m.id + " (" + m.hora + ")").join("\n") : ""), 
-    r.tiempoExtra, 
+    r.fecha + "\n(" + r.horaFin + ")", 
+    r.jornada + (r.matriculas ? "\n" + r.matriculas.map(m => "• " + m.id + " (" + m.hora + ")").join("\n") : ""), 
     r.observaciones || "—"
   ]);
 
   doc.autoTable({
     startY: 30,
-    head: [['Fecha', 'Jornada / Equipos', 'Extra', 'Observaciones']],
+    head: [['Fecha / Culminación', 'Equipos Liberados', 'Observaciones']],
     body: body,
-    // Forzamos columnas anchas para que quepan las imágenes
-    columnStyles: { 
-        0: {cellWidth: 25}, 
-        1: {minCellWidth: 45}, // Ancho mínimo para fotos de aeronaves
-        2: {cellWidth: 15}, 
-        3: {minCellWidth: 45} // Ancho mínimo para observaciones
-    },
-    styles: { fontSize: 8, minCellHeight: 50 }, 
+    styles: { fontSize: 9, cellPadding: 3 },
     headStyles: { fillColor: [30, 41, 59] },
-    didDrawCell: function(data) {
-        if (data.section === 'body') {
-            const rowIdx = data.row.index;
-            const record = h[rowIdx];
-            if(!record) return;
+    columnStyles: { 0: {cellWidth: 40}, 1: {cellWidth: 60} }
+  });
 
-            // Columna 1: Imágenes de Matriculas
-            if (data.column.index === 1 && record.matriculas && Array.isArray(record.matriculas)) {
-                let xOffset = data.cell.x + 2;
-                const imgSize = 40; 
-                const yOffset = data.cell.y + data.cell.height - (imgSize + 2); 
+  // 2. GENERACIÓN DE HOJAS DE ANEXO FOTOGRÁFICO
+  let pageNumber = 1;
+  
+  h.forEach((reg, index) => {
+      // Recolectar todas las fotos de este registro
+      let allPhotos = [];
+      
+      // Fotos de Matriculas
+      if(reg.matriculas && Array.isArray(reg.matriculas)){
+          reg.matriculas.forEach(m => {
+             if(m.fotos && m.fotos.length > 0) {
+                 m.fotos.forEach((f, i) => {
+                     allPhotos.push({ src: f, label: `Aeronave: ${m.id} - Foto ${i+1}` });
+                 });
+             }
+          });
+      }
+      
+      // Fotos de Observaciones
+      if(reg.fotosObservaciones && Array.isArray(reg.fotosObservaciones)){
+          reg.fotosObservaciones.forEach((f, i) => {
+              allPhotos.push({ src: f, label: `Observación General - Foto ${i+1}` });
+          });
+      }
 
-                record.matriculas.forEach(m => {
-                    if (m.fotos && Array.isArray(m.fotos)) {
-                        m.fotos.forEach(foto => {
-                            // Ajustamos para que se dibuje SIEMPRE, incluso si se sale un poco
-                            // Usamos Math.min para no pasarnos del ancho real de la celda si fuera necesario
-                            const widthDispo = data.cell.width - 4;
-                            const drawSize = Math.min(imgSize, widthDispo);
+      // Si hay fotos, crear páginas nuevas para ellas
+      if(allPhotos.length > 0) {
+          doc.addPage(); // Nueva hoja
+          doc.setFontSize(14); doc.setTextColor(0, 0, 0);
+          doc.text(`Anexo Fotográfico - Fecha: ${reg.fecha}`, 14, 15);
+          
+          let yPos = 25;
+          const pageHeight = doc.internal.pageSize.height;
+          
+          allPhotos.forEach(photo => {
+              // Altura de imagen grande: 110mm (casi media hoja)
+              const imgHeight = 110; 
+              const imgWidth = 170; // Ancho completo margen a margen
+              
+              // Si no cabe en la hoja actual, añadir otra
+              if (yPos + imgHeight > pageHeight - 10) {
+                  doc.addPage();
+                  yPos = 20;
+              }
 
-                            if (xOffset + drawSize <= data.cell.x + data.cell.width + 5) {
-                                try { doc.addImage(foto, 'JPEG', xOffset, yOffset, drawSize, drawSize); } catch(e){}
-                                xOffset += drawSize + 2;
-                            }
-                        });
-                    }
-                });
-            }
-
-            // Columna 3: Imágenes de Observaciones
-            if (data.column.index === 3 && record.fotosObservaciones && Array.isArray(record.fotosObservaciones)) {
-                let xOffset = data.cell.x + 2;
-                const imgSize = 40; 
-                const yOffset = data.cell.y + data.cell.height - (imgSize + 2);
-                
-                record.fotosObservaciones.forEach(foto => {
-                    const widthDispo = data.cell.width - 4;
-                    const drawSize = Math.min(imgSize, widthDispo);
-                    
-                    if (xOffset + drawSize <= data.cell.x + data.cell.width + 5) {
-                        try { doc.addImage(foto, 'JPEG', xOffset, yOffset, drawSize, drawSize); } catch(e){}
-                        xOffset += drawSize + 2;
-                    }
-                });
-            }
-        }
-    }
+              try {
+                doc.text(photo.label, 14, yPos - 2);
+                doc.addImage(photo.src, 'JPEG', 20, yPos, imgWidth, imgHeight);
+                // Marco opcional alrededor de la foto
+                doc.setDrawColor(200);
+                doc.rect(20, yPos, imgWidth, imgHeight);
+              } catch(e) { console.error("Error imagen", e); }
+              
+              yPos += imgHeight + 15; // Espacio para la siguiente
+          });
+      }
   });
 
   doc.save(`Reporte_QC_${mesClave}.pdf`);
