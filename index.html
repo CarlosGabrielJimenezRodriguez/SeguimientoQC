@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Seguimiento Laboral QC - Pro V2</title>
+<title>Seguimiento Laboral QC - Pro V2.3 (PDF Fix)</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
   :root {
@@ -30,7 +30,7 @@
 
   main {
     width: 100%;
-    max-width: 450px; /* Un poco más ancho para que quepan los checks */
+    max-width: 450px;
     margin: 15px;
     background: var(--panel);
     backdrop-filter: blur(12px);
@@ -99,7 +99,7 @@
     accent-color: var(--accent);
   }
 
-  /* ESTILOS NUEVOS PARA LA LIBERACIÓN */
+  /* ESTILOS DE LA LIBERACIÓN */
   .check-item-lib {
     display: flex !important;
     flex-direction: column !important;
@@ -107,12 +107,11 @@
     margin-top: 12px;
     padding: 15px !important;
     border: 1px solid #334155 !important;
-    background: rgba(15, 23, 42, 0.6) !important; /* Fondo más oscuro */
+    background: rgba(15, 23, 42, 0.6) !important;
     border-radius: 15px;
     transition: border-color 0.3s ease, background 0.3s ease;
   }
-   
-  /* Cuando está completamente liberado */
+    
   .check-item-lib.liberado-ok {
     border-color: var(--success) !important;
     background: rgba(34, 197, 94, 0.1) !important;
@@ -126,10 +125,9 @@
     text-transform: uppercase;
   }
 
-  /* Grid para el mini checklist */
   .mini-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr; /* Dos columnas */
+    grid-template-columns: 1fr 1fr;
     gap: 8px;
     margin-top: 10px;
     background: rgba(0,0,0,0.2);
@@ -141,7 +139,7 @@
     display: flex;
     align-items: flex-start;
     gap: 6px;
-    font-size: 10px; /* Letra pequeña */
+    font-size: 10px;
     color: #cbd5e1;
     line-height: 1.2;
   }
@@ -160,7 +158,7 @@
     padding: 5px 0;
     min-height: 20px;
   }
-   
+    
   .img-wrapper { position: relative; flex-shrink: 0; }
   .img-thumb { width: 60px; height: 60px; object-fit: cover; border-radius: 8px; border: 1px solid var(--accent); }
   .btn-remove-img { position: absolute; top: -5px; right: -5px; background: var(--danger); color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; border: none; }
@@ -212,11 +210,12 @@
         <option value="Nocturno">Turno Nocturno</option>
         <option value="Curso">Capacitación</option>
         <option value="Extra">Tiempo Extra</option>
+        <option value="Liberacion">Items de Liberación (Aeronave)</option>
     </select>
-     
+      
     <div id="editorTareas" style="max-height: 300px; overflow-y: auto; margin-bottom: 15px; padding-right: 5px;"></div>
-     
-    <button onclick="agregarTarea()" class="btn-outline"><i class="fas fa-plus"></i> Añadir Tarea</button>
+      
+    <button onclick="agregarTarea()" class="btn-outline"><i class="fas fa-plus"></i> Añadir Item</button>
     <button onclick="guardarConfig()" class="btn-success"><i class="fas fa-save"></i> Guardar Cambios</button>
     <button onclick="volverAlInicioDesdeConfig()" class="btn-outline"><i class="fas fa-arrow-left"></i> Regresar</button>
   </section>
@@ -241,10 +240,10 @@
   <section id="pantallaChecklist" style="display:none;">
     <h1>Checklist del Turno</h1>
     <div id="listaChecklist"></div>
-    
+     
     <label style="margin-top:20px; display:block;">Observaciones Generales</label>
     <textarea id="observacionesTurno" placeholder="Notas adicionales..."></textarea>
-    
+     
     <button type="button" class="btn-camera" onclick="document.getElementById('fileObservaciones').click()" style="margin-top:10px;">
         <i class="fas fa-camera"></i> Añadir Foto a Observaciones
     </button>
@@ -292,32 +291,26 @@ const checklistsBase = {
     "FORMS PRIMA DOMINICAL/DIA FESTIVO", "Cargar Viaticos", "Clock out", "Checar salida"
   ],
   Curso: ["TIA, ID Empresa, INE, licencia, Examen Medico","Check-in hotel/vuelo", "Verificar Links curso", "Al culminar realizar forms de cursos", "Check-out hotel/vuelo"],
-  Extra: ["Forms tiempo extra"]
+  Extra: ["Forms tiempo extra"],
+  Liberacion: [
+    "Diferidos con vigencia", "Bit Mantto ultimo folio", "Bit Sobre ultimo", "Tareas abiertas con remanente",
+    "Componentes asentados", "Cierre diferido Mantto/Dif", "Trabajos completados", "Eq. Emergencia verificado",
+    "Aeronavegabilidad vigente", "Sin reportes abiertos", "Niveles OK", "Accesos cerrados",
+    "ENG/HCU/Seguros LG", "Sin limitantes"
+  ]
 };
 
-// PUNTOS CRITICOS PARA LA LIBERACION DE AERONAVES
-const itemsLiberacion = [
-    "Diferidos con vigencia",
-    "Bit Mantto ultimo folio",
-    "Bit Sobre ultimo",
-    "Tareas abiertas con remanente",
-    "Componentes asentados",
-    "Cierre diferido Mantto/Dif",
-    "Trabajos completados",
-    "Eq. Emergencia verificado",
-    "Aeronavegabilidad vigente",
-    "Sin reportes abiertos",
-    "Niveles OK",
-    "Accesos cerrados",
-    "ENG/HCU/Seguros LG",
-    "Sin limitantes"
-];
-
 let misChecklists = JSON.parse(localStorage.getItem("configChecklistsQC")) || checklistsBase;
-let fotosAeronaves = { 1: [], 2: [], 3: [], 4: [] };
-let fotosObservaciones = []; // NUEVO ARREGLO FOTOS OBSERVACIONES
+// Migración segura
+if (!misChecklists.Liberacion) {
+    misChecklists.Liberacion = checklistsBase.Liberacion;
+    localStorage.setItem("configChecklistsQC", JSON.stringify(misChecklists));
+}
 
-// --- LÓGICA DEL EDITOR (CONFIG) ---
+let fotosAeronaves = { 1: [], 2: [], 3: [], 4: [] };
+let fotosObservaciones = [];
+
+// --- CONFIG ---
 function irAConfig() {
     document.getElementById("pantallaInicio").style.display = "none";
     document.getElementById("pantallaConfig").style.display = "block";
@@ -328,7 +321,6 @@ function renderEditor() {
     const tipo = document.getElementById("selectTipoConfig").value;
     const contenedor = document.getElementById("editorTareas");
     contenedor.innerHTML = "";
-     
     misChecklists[tipo].forEach((tarea, index) => {
         contenedor.innerHTML += `
             <div class="editor-item">
@@ -338,22 +330,19 @@ function renderEditor() {
         `;
     });
 }
-
 function actualizarTarea(tipo, index, valor) { misChecklists[tipo][index] = valor; }
 function eliminarTarea(tipo, index) { misChecklists[tipo].splice(index, 1); renderEditor(); }
-function agregarTarea() { const tipo = document.getElementById("selectTipoConfig").value; misChecklists[tipo].push("Nueva tarea..."); renderEditor(); }
-
+function agregarTarea() { const tipo = document.getElementById("selectTipoConfig").value; misChecklists[tipo].push("Nuevo ítem..."); renderEditor(); }
 function guardarConfig() {
     localStorage.setItem("configChecklistsQC", JSON.stringify(misChecklists));
     alert("✅ Listas actualizadas.");
 }
-
 function volverAlInicioDesdeConfig() {
     document.getElementById("pantallaConfig").style.display = "none";
     document.getElementById("pantallaInicio").style.display = "block";
 }
 
-// --- LÓGICA DE NAVEGACIÓN Y FLUJO ---
+// --- FLUJO ---
 document.getElementById("formInicio").addEventListener("submit", function(e) {
   e.preventDefault();
   const datos = {
@@ -390,18 +379,16 @@ function cargarChecklist() {
   const tipo = localStorage.getItem("tipoJornadaQC");
   const esExtra = localStorage.getItem("esTiempoExtraQC") === "SI";
 
-  // LIMPIAR FOTOS OBSERVACIONES AL CARGAR
   fotosObservaciones = [];
   renderGaleriaObservaciones();
   document.getElementById("observacionesTurno").value = "";
-  
+   
   let checklist = [...misChecklists[tipo]];
   if(esExtra && tipo !== "Curso") checklist = checklist.concat(misChecklists.Extra);
 
   const contenedor = document.getElementById("listaChecklist");
   contenedor.innerHTML = "";
 
-  // Renderizar tareas normales
   checklist.forEach((item, index) => {
     contenedor.innerHTML += `
       <div>
@@ -410,13 +397,12 @@ function cargarChecklist() {
       </div>`;
   });
 
-  // Renderizar Liberación de Aeronaves (Solo si no es curso)
   if (tipo !== "Curso") {
     contenedor.innerHTML += `<h3><i class="fas fa-shield-alt"></i> Liberación de Aeronaves</h3>`;
+    const itemsLibDinamicos = misChecklists.Liberacion;
     for (let i = 1; i <= 4; i++) {
-        // Generamos el HTML de los mini-items
         let miniItemsHTML = "";
-        itemsLiberacion.forEach((subItem, subIndex) => {
+        itemsLibDinamicos.forEach((subItem, subIndex) => {
             miniItemsHTML += `
                 <div class="mini-option">
                     <input type="checkbox" class="sub-check-${i}" onchange="verificarEstadoLiberacion(${i})">
@@ -428,18 +414,12 @@ function cargarChecklist() {
       contenedor.innerHTML += `
         <div class="check-item-lib" id="cardAeronave${i}">
           <input type="text" id="matEquipo${i}" placeholder="MATRÍCULA EQUIPO ${i}">
-           
           <button type="button" class="btn-camera" onclick="document.getElementById('file${i}').click()">
             <i class="fas fa-camera"></i> Añadir Foto / Galería
           </button>
           <input type="file" id="file${i}" accept="image/*" style="display:none" onchange="addFoto(${i})">
-           
           <div id="galeria${i}" class="galeria-lib"></div>
-           
-          <div class="mini-grid">
-             ${miniItemsHTML}
-          </div>
-
+          <div class="mini-grid">${miniItemsHTML}</div>
           <div style="text-align:center; margin-top:5px;">
             <small id="tsLib${i}" style="font-size:12px; color:var(--text); font-weight:bold; opacity:0.5;">Pendiente de liberar</small>
           </div>
@@ -447,7 +427,6 @@ function cargarChecklist() {
     }
   }
 
-  // Listener para checks normales (fecha y hora)
   checklist.forEach((_, index) => {
     document.getElementById(`item${index}`).addEventListener("change", function() {
       if (this.checked) document.getElementById(`hora${index}`).innerText = " ✔ " + new Date().toLocaleTimeString();
@@ -455,31 +434,28 @@ function cargarChecklist() {
   });
 }
 
-// Nueva función para verificar si se marcaron los 12 puntos de una aeronave
 function verificarEstadoLiberacion(idAvion) {
-    const totalItems = itemsLiberacion.length;
+    const totalItems = misChecklists.Liberacion.length;
     const marcados = document.querySelectorAll(`.sub-check-${idAvion}:checked`).length;
     const card = document.getElementById(`cardAeronave${idAvion}`);
     const labelEstado = document.getElementById(`tsLib${idAvion}`);
     const inputMat = document.getElementById(`matEquipo${idAvion}`);
 
-    if (marcados === totalItems) {
-        // Todo marcado
+    if (marcados === totalItems && totalItems > 0) {
         card.classList.add("liberado-ok");
         if (!inputMat.dataset.horaLib) {
              const ahora = new Date();
              inputMat.dataset.horaLib = ahora.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
         }
         labelEstado.style.opacity = "1";
-        labelEstado.style.color = "var(--success)"; // Verde
+        labelEstado.style.color = "var(--success)"; 
         labelEstado.innerText = "LIBERADO: " + inputMat.dataset.horaLib;
     } else {
-        // Falta algo
         card.classList.remove("liberado-ok");
         labelEstado.style.opacity = "0.5";
         labelEstado.style.color = "var(--text)";
         labelEstado.innerText = "Pendiente (" + marcados + "/" + totalItems + ")";
-        delete inputMat.dataset.horaLib; // Resetear si desmarcan algo
+        delete inputMat.dataset.horaLib; 
     }
 }
 
@@ -507,7 +483,6 @@ function addFoto(i) {
   reader.readAsDataURL(file);
 }
 
-// --- NUEVAS FUNCIONES PARA FOTOS DE OBSERVACIONES (V2) ---
 function addFotoObservaciones() {
   const fileInput = document.getElementById('fileObservaciones');
   const file = fileInput.files[0];
@@ -535,80 +510,46 @@ function addFotoObservaciones() {
 function renderGaleriaObservaciones() {
   const galeria = document.getElementById('galeriaObservaciones');
   galeria.innerHTML = fotosObservaciones.map((src, index) => `
-    <div class="img-wrapper">
-      <img src="${src}" class="img-thumb">
-      <button class="btn-remove-img" onclick="removeFotoObservaciones(${index})">×</button>
-    </div>
+    <div class="img-wrapper"><img src="${src}" class="img-thumb"><button class="btn-remove-img" onclick="removeFotoObservaciones(${index})">×</button></div>
   `).join('');
 }
-
-function removeFotoObservaciones(index) {
-    fotosObservaciones.splice(index, 1);
-    renderGaleriaObservaciones();
-}
-// --- FIN FUNCIONES OBSERVACIONES ---
-
+function removeFotoObservaciones(index) { fotosObservaciones.splice(index, 1); renderGaleriaObservaciones(); }
 function renderGaleria(i) {
   const galeria = document.getElementById(`galeria${i}`);
   galeria.innerHTML = fotosAeronaves[i].map((src, index) => `
-    <div class="img-wrapper">
-      <img src="${src}" class="img-thumb">
-      <button class="btn-remove-img" onclick="removeFoto(${i}, ${index})">×</button>
-    </div>
+    <div class="img-wrapper"><img src="${src}" class="img-thumb"><button class="btn-remove-img" onclick="removeFoto(${i}, ${index})">×</button></div>
   `).join('');
 }
-
 function removeFoto(i, index) { fotosAeronaves[i].splice(index, 1); renderGaleria(i); }
 
 function validarChecklist() {
   const tipo = localStorage.getItem("tipoJornadaQC");
   let matriculasData = [];
-
   if (tipo !== "Curso") {
     for (let i = 1; i <= 4; i++) {
       const matInput = document.getElementById(`matEquipo${i}`);
       const mat = matInput.value.trim();
-       
-      // Validamos si hay matrícula pero faltan checks
       const checksFaltantes = document.querySelectorAll(`.sub-check-${i}:not(:checked)`);
-
       if (mat !== "") {
-          if (checksFaltantes.length > 0) {
-              alert(`⚠️ La aeronave ${mat.toUpperCase()} tiene ${checksFaltantes.length} puntos pendientes sin verificar.`);
-              return; // Detener
-          }
-           
-          matriculasData.push({
-              id: mat.toUpperCase(),
-              hora: matInput.dataset.horaLib || "--:--",
-              fotos: [...fotosAeronaves[i]]
-          });
+          if (checksFaltantes.length > 0) { alert(`⚠️ La aeronave ${mat.toUpperCase()} tiene ${checksFaltantes.length} puntos pendientes.`); return; }
+          matriculasData.push({ id: mat.toUpperCase(), hora: matInput.dataset.horaLib || "--:--", fotos: [...fotosAeronaves[i]] });
       }
     }
   }
-
   const checks = document.querySelectorAll("#listaChecklist > div > input[type='checkbox']");
   if ([...checks].some(c => !c.checked)) { alert("⚠️ Tareas de jornada incompletas."); return; }
-
   const colaborador = JSON.parse(localStorage.getItem("colaboradorQC"));
   const registro = {
-    nombre: colaborador.nombre,
-    empleado: colaborador.empleado,
-    fecha: colaborador.fecha,
-    jornada: tipo,
-    matriculas: matriculasData,
-    tiempoExtra: localStorage.getItem("esTiempoExtraQC"),
-    horaFin: new Date().toLocaleTimeString(),
-    observaciones: document.getElementById("observacionesTurno").value.trim(),
-    fotosObservaciones: [...fotosObservaciones] // GUARDAR FOTOS OBS
+    nombre: colaborador.nombre, empleado: colaborador.empleado, fecha: colaborador.fecha,
+    jornada: tipo, matriculas: matriculasData, tiempoExtra: localStorage.getItem("esTiempoExtraQC"),
+    horaFin: new Date().toLocaleTimeString(), observaciones: document.getElementById("observacionesTurno").value.trim(),
+    fotosObservaciones: [...fotosObservaciones]
   };
-
   const mesClave = `historialQC_${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,"0")}`;
   const historial = JSON.parse(localStorage.getItem(mesClave)) || [];
   historial.push(registro);
   localStorage.setItem(mesClave, JSON.stringify(historial));
-
-  alert("✅ Turno Finalizado Exitosamente");
+  alert("✅ Turno Finalizado");
   irAHistorial();
 }
 
@@ -616,16 +557,10 @@ function cargarHistorialMensual() {
   const ahora = new Date();
   const mesClave = `historialQC_${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, "0")}`;
   const historial = JSON.parse(localStorage.getItem(mesClave)) || [];
-   
   document.getElementById("statJornadas").innerText = historial.length;
   document.getElementById("statExtra").innerText = historial.filter(r => r.tiempoExtra === "SI").length;
-   
   const contenedor = document.getElementById("listaHistorial");
-  if (historial.length === 0) {
-    contenedor.innerHTML = "<p style='text-align:center; color:var(--muted);'>No hay registros.</p>";
-    return;
-  }
-   
+  if (historial.length === 0) { contenedor.innerHTML = "<p style='text-align:center; color:var(--muted);'>No hay registros.</p>"; return; }
   contenedor.innerHTML = historial.map((reg, i) => `
     <div style="padding:15px; border:1px solid #1e293b; margin-bottom:12px; border-radius:15px; background:rgba(2, 6, 23, 0.8);">
       <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
@@ -634,28 +569,19 @@ function cargarHistorialMensual() {
       </div>
       <strong style="font-size:14px;">${reg.jornada} ${reg.matriculas ? '[' + reg.matriculas.map(m => m.id).join(', ') + ']' : ''}</strong>
       ${reg.matriculas ? reg.matriculas.map(m => `
-        <div style="margin-top:8px;">
-          <small style="color:var(--accent)">${m.id} (${m.hora}):</small>
-          <div style="display:flex; gap:5px; margin-top:3px; overflow-x:auto;">
-            ${m.fotos.map(f => `<img src="${f}" style="height:35px; border-radius:4px;">`).join('')}
-          </div>
-        </div>
-      `).join('') : ''}
-      
+        <div style="margin-top:8px;"><small style="color:var(--accent)">${m.id} (${m.hora}):</small>
+          <div style="display:flex; gap:5px; margin-top:3px; overflow-x:auto;">${m.fotos ? m.fotos.map(f => `<img src="${f}" style="height:35px; border-radius:4px;">`).join('') : ''}</div>
+        </div>`).join('') : ''}
       <div style="margin-top:10px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.1);">
           <small style="color:var(--muted); display:block; margin-bottom:4px;">Observaciones:</small>
           <p style="font-size:12px; color:#e2e8f0; margin:0;">${reg.observaciones || "—"}</p>
-          ${reg.fotosObservaciones && reg.fotosObservaciones.length > 0 ? `
-            <div style="display:flex; gap:5px; margin-top:8px; overflow-x:auto;">
-                ${reg.fotosObservaciones.map(f => `<img src="${f}" style="height:50px; border-radius:6px; border:1px solid #475569;">`).join('')}
-            </div>
-          ` : ''}
+          ${reg.fotosObservaciones && reg.fotosObservaciones.length > 0 ? `<div style="display:flex; gap:5px; margin-top:8px; overflow-x:auto;">${reg.fotosObservaciones.map(f => `<img src="${f}" style="height:50px; border-radius:6px; border:1px solid #475569;">`).join('')}</div>` : ''}
       </div>
-
       <button onclick="eliminarRegistro(${i})" style="padding:5px; background:var(--danger); font-size:10px; height:auto; width:60px; margin-top:10px;">Borrar</button>
     </div>`).join("");
 }
 
+// --- EXPORTAR CON IMÁGENES (FIX ROBUSTO) ---
 function exportarPDF(){
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
@@ -669,7 +595,7 @@ function exportarPDF(){
 
   const body = h.map(r => [
     r.fecha, 
-    r.jornada + (r.matriculas ? "\n" + r.matriculas.map(m => m.id + " (" + m.hora + ")").join(", ") : ""), 
+    r.jornada + (r.matriculas ? "\n" + r.matriculas.map(m => m.id + " (" + m.hora + ")").join("\n") : ""), 
     r.tiempoExtra, 
     r.observaciones || "—"
   ]);
@@ -678,8 +604,47 @@ function exportarPDF(){
     startY: 30,
     head: [['Fecha', 'Jornada / Equipos', 'Extra', 'Observaciones']],
     body: body,
-    styles: { fontSize: 8 },
-    headStyles: { fillColor: [30, 41, 59] }
+    styles: { fontSize: 8, minCellHeight: 25 },
+    headStyles: { fillColor: [30, 41, 59] },
+    didDrawCell: function(data) {
+        if (data.section === 'body') {
+            const rowIdx = data.row.index;
+            const record = h[rowIdx];
+            if(!record) return;
+
+            // Columna 1: Imágenes de Matriculas
+            if (data.column.index === 1 && record.matriculas && Array.isArray(record.matriculas)) {
+                let xOffset = data.cell.x + 2;
+                const yOffset = data.cell.y + data.cell.height - 15;
+                const imgSize = 12;
+
+                record.matriculas.forEach(m => {
+                    if (m.fotos && Array.isArray(m.fotos)) {
+                        m.fotos.forEach(foto => {
+                            if (xOffset + imgSize < data.cell.x + data.cell.width) {
+                                try { doc.addImage(foto, 'JPEG', xOffset, yOffset, imgSize, imgSize); } catch(e){}
+                                xOffset += imgSize + 2;
+                            }
+                        });
+                    }
+                });
+            }
+
+            // Columna 3: Imágenes de Observaciones
+            if (data.column.index === 3 && record.fotosObservaciones && Array.isArray(record.fotosObservaciones)) {
+                let xOffset = data.cell.x + 2;
+                const yOffset = data.cell.y + data.cell.height - 15;
+                const imgSize = 12;
+                
+                record.fotosObservaciones.forEach(foto => {
+                    if (xOffset + imgSize < data.cell.x + data.cell.width) {
+                        try { doc.addImage(foto, 'JPEG', xOffset, yOffset, imgSize, imgSize); } catch(e){}
+                        xOffset += imgSize + 2;
+                    }
+                });
+            }
+        }
+    }
   });
 
   doc.save(`Reporte_QC_${mesClave}.pdf`);
