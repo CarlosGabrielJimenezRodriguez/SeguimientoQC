@@ -375,7 +375,7 @@ function cargarChecklist() {
             return;
           }
           if (this.checked) {
-            if (confirm(`🛡️ CONTROL QC: ${mat.toUpperCase()}\n\n¿Confirmas los puntos críticos?\n\n1. Diferidos con vigencia.\n2. Bitácoras cerradas.\n3. Tareas sin remanente.\n4. Componentes asentados.\n5. Cierre diferido.\n6. Trabajos/Aceites OK.\n7. Eq. Emergencia verificado.\n8. Aeronavegabilidad vigente.\n9. Sin reportes abiertos.\n10. Niveles OK.\n11. Accesos cerrados.\n12. Sin limitantes.`)) {
+            if (confirm(`🛡️ CONTROL QC: ${mat.toUpperCase()}\n\n¿Confirmas los puntos críticos?\n\n1. Diferidos con vigencia.\n2. Bitácora Mantto/Sobrecargos cerradas al ultimo folio.\n3. Tareas abiertas con remanente.\n4. Componentes cambiados asentados.\n5. Cierre diferido asentado.\n6. Trabajos completos de acuerdo a manual.\n7. Eq. Emergencia verificado.\n8. Aeronavegabilidad vigente.\n9. Sin reportes abiertos.\n10. Niveles OK.\n11. Accesos cerrados/ seguros fuera/ENG/HCU.\n12. Sin limitantes para liberación.`)) {
                 const ahora = new Date();
                 matInput.dataset.horaLib = ahora.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                 document.getElementById(`tsLib${i}`).innerText = "Liberado: " + matInput.dataset.horaLib;
