@@ -15,6 +15,7 @@
     --card: #020617;
     --danger: #ef4444;
     --success: #22c55e;
+    --warning: #f59e0b;
   }
 
   body {
@@ -39,6 +40,7 @@
     padding: 20px;
     box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
     border: 1px solid rgba(255,255,255,0.1);
+    position: relative;
   }
 
   h1 { text-align: center; font-size: 20px; margin-bottom: 20px; color: var(--accent); }
@@ -78,6 +80,7 @@
   .btn-outline { background: #020617; color: var(--text); border: 1px solid #1e293b; }
   .btn-danger { background: var(--danger); color: white; }
   .btn-success { background: var(--success); color: #020617; }
+  .btn-warning { background: var(--warning); color: #020617; }
 
   #listaChecklist > div {
     display: flex;
@@ -111,7 +114,7 @@
     border-radius: 15px;
     transition: border-color 0.3s ease, background 0.3s ease;
   }
-    
+     
   .check-item-lib.liberado-ok {
     border-color: var(--success) !important;
     background: rgba(34, 197, 94, 0.1) !important;
@@ -158,10 +161,10 @@
     padding: 5px 0;
     min-height: 20px;
   }
-    
+     
   .img-wrapper { position: relative; flex-shrink: 0; }
-  .img-thumb { width: 60px; height: 60px; object-fit: cover; border-radius: 8px; border: 1px solid var(--accent); }
-  .btn-remove-img { position: absolute; top: -5px; right: -5px; background: var(--danger); color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; border: none; }
+  .img-thumb { width: 60px; height: 60px; object-fit: cover; border-radius: 8px; border: 1px solid var(--accent); cursor: pointer; }
+  .btn-remove-img { position: absolute; top: -5px; right: -5px; background: var(--danger); color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; }
 
   .btn-camera { background: #1e293b; color: var(--accent); padding: 10px; font-size: 13px; border: 1px dashed var(--accent); border-radius: 10px; }
 
@@ -175,11 +178,53 @@
 
   .editor-item { display: flex; gap: 8px; margin-bottom: 8px; animation: slideIn 0.2s ease-out; }
   @keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
+
+  /* NUEVOS ESTILOS: VISOR Y MODAL DE EDICIÓN */
+  .modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.9); z-index: 1000;
+    display: none; justify-content: center; align-items: center;
+    backdrop-filter: blur(5px);
+  }
+  .modal-img { max-width: 95%; max-height: 90%; border-radius: 8px; box-shadow: 0 0 20px rgba(56, 189, 248, 0.5); }
+  .close-modal { position: absolute; top: 20px; right: 20px; color: white; font-size: 30px; cursor: pointer; z-index: 1001; }
+
+  .modal-editor-content {
+    background: #1e293b; padding: 20px; border-radius: 20px;
+    width: 90%; max-width: 400px; border: 1px solid var(--accent);
+    max-height: 90vh; overflow-y: auto;
+  }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
+
+<div id="visorImg" class="modal-overlay" onclick="cerrarVisor()">
+  <span class="close-modal">&times;</span>
+  <img id="imgFull" class="modal-img">
+</div>
+
+<div id="modalEditor" class="modal-overlay">
+  <div class="modal-editor-content">
+    <h3><i class="fas fa-edit"></i> Editar Registro</h3>
+    <label>Observaciones</label>
+    <textarea id="editObservaciones" rows="4"></textarea>
+    
+    <label style="margin-top:10px;">Fotos (General/Observaciones)</label>
+    <div id="editGaleria" class="galeria-lib" style="flex-wrap: wrap;"></div>
+    
+    <button type="button" class="btn-camera" onclick="document.getElementById('fileEdit').click()" style="margin-top:10px;">
+        <i class="fas fa-plus"></i> Añadir Foto
+    </button>
+    <input type="file" id="fileEdit" accept="image/*" style="display:none" onchange="addFotoEdicion()">
+
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:20px;">
+        <button onclick="guardarEdicion()" class="btn-success"><i class="fas fa-save"></i> Guardar</button>
+        <button onclick="cerrarEditor()" class="btn-outline">Cancelar</button>
+    </div>
+  </div>
+</div>
 
 <main>
   <section id="pantallaInicio">
@@ -308,6 +353,9 @@ if (!misChecklists.Liberacion) {
 
 let fotosAeronaves = { 1: [], 2: [], 3: [], 4: [] };
 let fotosObservaciones = [];
+// Variables para edición
+let indiceEditando = -1;
+let fotosEditando = [];
 
 // --- CONFIG ---
 function irAConfig() {
@@ -552,6 +600,92 @@ function validarChecklist() {
   irAHistorial();
 }
 
+// --- VISOR DE IMAGENES FULL SCREEN ---
+function verImagenGrande(src) {
+    document.getElementById("imgFull").src = src;
+    document.getElementById("visorImg").style.display = "flex";
+}
+function cerrarVisor() {
+    document.getElementById("visorImg").style.display = "none";
+}
+
+// --- EDICIÓN DE HISTORIAL ---
+function abrirEditor(indice) {
+    const mesClave = `historialQC_${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,"0")}`;
+    const historial = JSON.parse(localStorage.getItem(mesClave));
+    const registro = historial[indice];
+    
+    indiceEditando = indice;
+    document.getElementById("editObservaciones").value = registro.observaciones || "";
+    
+    // Si ya tiene fotos en observaciones, las cargamos. Si no, array vacío
+    fotosEditando = registro.fotosObservaciones ? [...registro.fotosObservaciones] : [];
+    
+    renderGaleriaEdicion();
+    document.getElementById("modalEditor").style.display = "flex";
+}
+
+function cerrarEditor() {
+    document.getElementById("modalEditor").style.display = "none";
+    indiceEditando = -1;
+    fotosEditando = [];
+}
+
+function renderGaleriaEdicion() {
+    const galeria = document.getElementById("editGaleria");
+    galeria.innerHTML = fotosEditando.map((src, index) => `
+        <div class="img-wrapper">
+            <img src="${src}" class="img-thumb" onclick="verImagenGrande('${src}')">
+            <button class="btn-remove-img" onclick="eliminarFotoEdicion(${index})">×</button>
+        </div>
+    `).join('');
+}
+
+function eliminarFotoEdicion(index) {
+    fotosEditando.splice(index, 1);
+    renderGaleriaEdicion();
+}
+
+function addFotoEdicion() {
+  const fileInput = document.getElementById('fileEdit');
+  const file = fileInput.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onloadend = function() {
+    const img = new Image();
+    img.src = reader.result;
+    img.onload = function() {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const MAX_WIDTH = 800;
+        const scale = MAX_WIDTH / img.width;
+        canvas.width = MAX_WIDTH;
+        canvas.height = img.height * scale;
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        fotosEditando.push(canvas.toDataURL('image/jpeg', 0.7));
+        renderGaleriaEdicion();
+        fileInput.value = ""; 
+    }
+  }
+  reader.readAsDataURL(file);
+}
+
+function guardarEdicion() {
+    if(indiceEditando === -1) return;
+    const mesClave = `historialQC_${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,"0")}`;
+    const historial = JSON.parse(localStorage.getItem(mesClave));
+    
+    // Actualizar registro
+    historial[indiceEditando].observaciones = document.getElementById("editObservaciones").value;
+    historial[indiceEditando].fotosObservaciones = [...fotosEditando];
+    
+    localStorage.setItem(mesClave, JSON.stringify(historial));
+    alert("✅ Registro actualizado correctamente");
+    cerrarEditor();
+    cargarHistorialMensual(); // Refrescar vista
+}
+
+// --- HISTORIAL ---
 function cargarHistorialMensual() {
   const ahora = new Date();
   const mesClave = `historialQC_${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, "0")}`;
@@ -560,6 +694,8 @@ function cargarHistorialMensual() {
   document.getElementById("statExtra").innerText = historial.filter(r => r.tiempoExtra === "SI").length;
   const contenedor = document.getElementById("listaHistorial");
   if (historial.length === 0) { contenedor.innerHTML = "<p style='text-align:center; color:var(--muted);'>No hay registros.</p>"; return; }
+  
+  // MODIFICADO: Añadido onClick para ver imagen y botón Editar
   contenedor.innerHTML = historial.map((reg, i) => `
     <div style="padding:15px; border:1px solid #1e293b; margin-bottom:12px; border-radius:15px; background:rgba(2, 6, 23, 0.8);">
       <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
@@ -569,14 +705,17 @@ function cargarHistorialMensual() {
       <strong style="font-size:14px;">${reg.jornada} ${reg.matriculas ? '[' + reg.matriculas.map(m => m.id).join(', ') + ']' : ''}</strong>
       ${reg.matriculas ? reg.matriculas.map(m => `
         <div style="margin-top:8px;"><small style="color:var(--accent)">${m.id} (${m.hora}):</small>
-          <div style="display:flex; gap:5px; margin-top:3px; overflow-x:auto;">${m.fotos ? m.fotos.map(f => `<img src="${f}" style="height:35px; border-radius:4px;">`).join('') : ''}</div>
+          <div style="display:flex; gap:5px; margin-top:3px; overflow-x:auto;">${m.fotos ? m.fotos.map(f => `<img src="${f}" style="height:35px; border-radius:4px; cursor:pointer;" onclick="verImagenGrande('${f}')">`).join('') : ''}</div>
         </div>`).join('') : ''}
       <div style="margin-top:10px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.1);">
           <small style="color:var(--muted); display:block; margin-bottom:4px;">Observaciones:</small>
           <p style="font-size:12px; color:#e2e8f0; margin:0;">${reg.observaciones || "—"}</p>
-          ${reg.fotosObservaciones && reg.fotosObservaciones.length > 0 ? `<div style="display:flex; gap:5px; margin-top:8px; overflow-x:auto;">${reg.fotosObservaciones.map(f => `<img src="${f}" style="height:50px; border-radius:6px; border:1px solid #475569;">`).join('')}</div>` : ''}
+          ${reg.fotosObservaciones && reg.fotosObservaciones.length > 0 ? `<div style="display:flex; gap:5px; margin-top:8px; overflow-x:auto;">${reg.fotosObservaciones.map(f => `<img src="${f}" style="height:50px; border-radius:6px; border:1px solid #475569; cursor:pointer;" onclick="verImagenGrande('${f}')">`).join('')}</div>` : ''}
       </div>
-      <button onclick="eliminarRegistro(${i})" style="padding:5px; background:var(--danger); font-size:10px; height:auto; width:60px; margin-top:10px;">Borrar</button>
+      <div style="display:flex; gap:10px; margin-top:10px;">
+        <button onclick="abrirEditor(${i})" class="btn-warning" style="padding:5px; font-size:10px; height:auto; width:auto; flex:1;"><i class="fas fa-edit"></i> Editar</button>
+        <button onclick="eliminarRegistro(${i})" style="padding:5px; background:var(--danger); font-size:10px; height:auto; width:auto; flex:1;"><i class="fas fa-trash"></i> Borrar</button>
+      </div>
     </div>`).join("");
 }
 
@@ -610,11 +749,11 @@ function exportarPDF(){
 
   // 2. GENERACIÓN DE HOJAS DE ANEXO FOTOGRÁFICO
   let pageNumber = 1;
-  
+   
   h.forEach((reg, index) => {
       // Recolectar todas las fotos de este registro
       let allPhotos = [];
-      
+       
       // Fotos de Matriculas
       if(reg.matriculas && Array.isArray(reg.matriculas)){
           reg.matriculas.forEach(m => {
@@ -625,7 +764,7 @@ function exportarPDF(){
              }
           });
       }
-      
+       
       // Fotos de Observaciones
       if(reg.fotosObservaciones && Array.isArray(reg.fotosObservaciones)){
           reg.fotosObservaciones.forEach((f, i) => {
@@ -638,15 +777,15 @@ function exportarPDF(){
           doc.addPage(); // Nueva hoja
           doc.setFontSize(14); doc.setTextColor(0, 0, 0);
           doc.text(`Anexo Fotográfico - Fecha: ${reg.fecha}`, 14, 15);
-          
+           
           let yPos = 25;
           const pageHeight = doc.internal.pageSize.height;
-          
+           
           allPhotos.forEach(photo => {
               // Altura de imagen grande: 110mm (casi media hoja)
               const imgHeight = 110; 
               const imgWidth = 170; // Ancho completo margen a margen
-              
+               
               // Si no cabe en la hoja actual, añadir otra
               if (yPos + imgHeight > pageHeight - 10) {
                   doc.addPage();
@@ -660,7 +799,7 @@ function exportarPDF(){
                 doc.setDrawColor(200);
                 doc.rect(20, yPos, imgWidth, imgHeight);
               } catch(e) { console.error("Error imagen", e); }
-              
+               
               yPos += imgHeight + 15; // Espacio para la siguiente
           });
       }
