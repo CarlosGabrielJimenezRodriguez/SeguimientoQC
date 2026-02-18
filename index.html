@@ -82,7 +82,7 @@
   .btn-success { background: var(--success); color: #020617; }
   .btn-warning { background: var(--warning); color: #020617; }
 
-  /* Ajuste para el checklist dinámico */
+  /* ESTILOS CHECKLIST Y EDICIÓN EN VIVO */
   #listaChecklist > div {
     display: flex;
     align-items: center;
@@ -92,18 +92,6 @@
     padding: 12px;
     border-radius: 12px;
     border: 1px solid rgba(255, 255, 255, 0.05);
-  }
-
-  /* Botón eliminar tarea en checklist activo */
-  .btn-del-task {
-      background: transparent;
-      color: var(--danger);
-      width: 30px;
-      height: 30px;
-      margin: 0;
-      padding: 0;
-      border: 1px solid rgba(239, 68, 68, 0.3);
-      border-radius: 8px;
   }
 
   #listaChecklist input[type="checkbox"] {
@@ -118,6 +106,30 @@
       flex-grow: 1;
       cursor: pointer;
       margin: 0;
+  }
+
+  /* Botones pequeños para mover items */
+  .btn-move {
+      background: #1e293b;
+      color: var(--text);
+      width: 30px;
+      height: 30px;
+      margin: 0;
+      padding: 0;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      font-size: 12px;
+  }
+  
+  .btn-del-task {
+      background: rgba(239, 68, 68, 0.2);
+      color: var(--danger);
+      width: 30px;
+      height: 30px;
+      margin: 0;
+      padding: 0;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: 8px;
   }
 
   /* ESTILOS DE LA LIBERACIÓN */
@@ -266,7 +278,7 @@
   </section>
 
   <section id="pantallaConfig" style="display:none;">
-    <h1><i class="fas fa-tasks"></i> Editar Checklists</h1>
+    <h1><i class="fas fa-tasks"></i> Editar Checklists (Maestro)</h1>
     <label>Seleccionar Lista</label>
     <select id="selectTipoConfig" onchange="renderEditor()" style="margin-bottom: 15px;">
         <option value="Diurno">Turno Diurno</option>
@@ -301,9 +313,18 @@
   </section>
 
   <section id="pantallaChecklist" style="display:none;">
-    <h1>Checklist del Turno</h1>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+        <h1 style="margin:0;">Checklist Activo</h1>
+        <button id="btnToggleEdit" onclick="toggleModoEdicion()" class="btn-outline" style="width:auto; height:auto; padding:8px; margin:0; font-size:12px;">
+            <i class="fas fa-cog"></i> Configurar
+        </button>
+    </div>
+    
     <div id="listaChecklist"></div>
-    <button onclick="agregarTareaEnTurno()" class="btn-outline" style="margin-bottom:15px; border-style:dashed; opacity:0.8;"><i class="fas fa-plus"></i> Agregar tarea al vuelo</button>
+    
+    <div id="zonaAgregar" style="display:none;">
+        <button onclick="agregarTareaEnTurno()" class="btn-outline" style="margin-bottom:15px; border-style:dashed; opacity:0.8;"><i class="fas fa-plus"></i> Nueva Tarea</button>
+    </div>
 
     <label style="margin-top:20px; display:block;">Observaciones Generales</label>
     <textarea id="observacionesTurno" placeholder="Notas adicionales..." oninput="guardarProgreso()"></textarea>
@@ -378,6 +399,7 @@ let fotosEditando = [];
 
 // VARIABLE PARA LA SESIÓN ACTIVA (Persistencia)
 let sesionActual = null;
+let modoEdicionActivo = false; // Controla si estamos reorganizando
 
 // --- INICIO Y RESTAURACIÓN ---
 window.onload = function() {
@@ -396,7 +418,7 @@ window.onload = function() {
     }
 };
 
-// --- CONFIG ---
+// --- CONFIG MAESTRA (Antes del turno) ---
 function irAConfig() {
     document.getElementById("pantallaInicio").style.display = "none";
     document.getElementById("pantallaConfig").style.display = "block";
@@ -487,25 +509,60 @@ function inicializarSesion(tipo, esExtraStr) {
     guardarProgreso();
 }
 
-// Renderiza basándose en la variable sesionActual (permite modificaciones dinámicas)
+// --- RENDERIZADO Y MODOS DEL CHECKLIST ---
+function toggleModoEdicion() {
+    modoEdicionActivo = !modoEdicionActivo;
+    const btn = document.getElementById("btnToggleEdit");
+    const zonaAgregar = document.getElementById("zonaAgregar");
+    
+    if (modoEdicionActivo) {
+        btn.innerHTML = '<i class="fas fa-check"></i> Terminar Edición';
+        btn.classList.add("btn-success");
+        btn.classList.remove("btn-outline");
+        zonaAgregar.style.display = "block";
+    } else {
+        btn.innerHTML = '<i class="fas fa-cog"></i> Configurar';
+        btn.classList.add("btn-outline");
+        btn.classList.remove("btn-success");
+        zonaAgregar.style.display = "none";
+    }
+    renderizarChecklistDesdeSesion();
+}
+
 function renderizarChecklistDesdeSesion() {
     const contenedor = document.getElementById("listaChecklist");
     contenedor.innerHTML = "";
 
     // 1. Renderizar Tareas
     sesionActual.tareas.forEach((itemObj, index) => {
-        const checked = itemObj.hecho ? "checked" : "";
-        const horaText = itemObj.hora ? ` ✔ ${itemObj.hora}` : "";
+        let contenidoItem = "";
         
-        contenedor.innerHTML += `
-          <div>
-            <input type="checkbox" id="item${index}" ${checked} onchange="toggleTarea(${index})">
-            <label for="item${index}">${itemObj.texto} <small id="hora${index}">${horaText}</small></label>
-            <button class="btn-del-task" onclick="eliminarTareaEnTurno(${index})"><i class="fas fa-trash"></i></button>
-          </div>`;
+        if (modoEdicionActivo) {
+            // MODO EDICIÓN: Flechas para ordenar y Papelera para borrar
+            contenidoItem = `
+                <div style="display:flex; gap:5px;">
+                    <button class="btn-move" onclick="moverTarea(${index}, -1)">⬆</button>
+                    <button class="btn-move" onclick="moverTarea(${index}, 1)">⬇</button>
+                </div>
+                <span style="flex-grow:1; margin-left:10px;">${itemObj.texto}</span>
+                <button class="btn-del-task" onclick="eliminarTareaEnTurno(${index})"><i class="fas fa-trash"></i></button>
+            `;
+        } else {
+            // MODO NORMAL: Checkbox y Hora
+            const checked = itemObj.hecho ? "checked" : "";
+            const horaText = itemObj.hora ? ` ✔ ${itemObj.hora}` : "";
+            contenidoItem = `
+                <input type="checkbox" id="item${index}" ${checked} onchange="toggleTarea(${index})">
+                <label for="item${index}">${itemObj.texto} <small id="hora${index}">${horaText}</small></label>
+            `;
+        }
+
+        contenedor.innerHTML += `<div>${contenidoItem}</div>`;
     });
 
     // 2. Renderizar Liberación (si no es curso)
+    // Solo mostramos la liberación si NO estamos editando, o si quieres editarla también, avísame.
+    // Por ahora la dejaré visible siempre, pero el reordenar solo aplica a las tareas de arriba.
     if (sesionActual.tipo !== "Curso") {
         contenedor.innerHTML += `<h3><i class="fas fa-shield-alt"></i> Liberación de Aeronaves</h3>`;
         const itemsLibDinamicos = misChecklists.Liberacion;
@@ -513,8 +570,6 @@ function renderizarChecklistDesdeSesion() {
         for (let i = 1; i <= 4; i++) {
             let miniItemsHTML = "";
             itemsLibDinamicos.forEach((subItem, subIndex) => {
-                // Verificar si estaba marcado en la sesión
-                // Usamos una clave combinada para identificar el check
                 const checkKey = `${i}-${subIndex}`;
                 const isChecked = sesionActual.liberacionChecks[i] && sesionActual.liberacionChecks[i].includes(subIndex) ? "checked" : "";
                 
@@ -526,7 +581,6 @@ function renderizarChecklistDesdeSesion() {
                 `;
             });
 
-            // Valor matricula y estado
             const valMat = sesionActual.matriculas[i] || "";
             const estadoTexto = sesionActual.matriculasHoras[i] ? `LIBERADO: ${sesionActual.matriculasHoras[i]}` : "Pendiente de liberar";
             const colorEstado = sesionActual.matriculasHoras[i] ? "var(--success)" : "var(--text)";
@@ -547,12 +601,10 @@ function renderizarChecklistDesdeSesion() {
               </div>
             </div>`;
             
-            // Renderizar galería de esta nave (pequeño retardo para asegurar DOM)
             setTimeout(() => renderGaleria(i), 0);
         }
     }
     
-    // Restaurar observaciones
     document.getElementById("observacionesTurno").value = sesionActual.observaciones || "";
     renderGaleriaObservaciones();
 }
@@ -561,12 +613,9 @@ function renderizarChecklistDesdeSesion() {
 
 function guardarProgreso() {
     if(!sesionActual) return;
-    // Guardar observaciones
     sesionActual.observaciones = document.getElementById("observacionesTurno").value;
-    // Guardar fotos en la estructura de sesión
     sesionActual.fotosAeronaves = fotosAeronaves;
     sesionActual.fotosObservaciones = fotosObservaciones;
-    
     localStorage.setItem("sesion_activa_qc", JSON.stringify(sesionActual));
 }
 
@@ -583,6 +632,21 @@ function toggleTarea(index) {
     guardarProgreso();
 }
 
+// FUNCIONES NUEVAS: Mover Items
+function moverTarea(index, direccion) {
+    const nuevaPos = index + direccion;
+    // Verificar límites
+    if (nuevaPos < 0 || nuevaPos >= sesionActual.tareas.length) return;
+    
+    // Intercambiar elementos
+    const temp = sesionActual.tareas[index];
+    sesionActual.tareas[index] = sesionActual.tareas[nuevaPos];
+    sesionActual.tareas[nuevaPos] = temp;
+    
+    renderizarChecklistDesdeSesion();
+    guardarProgreso();
+}
+
 function agregarTareaEnTurno() {
     const texto = prompt("Nombre de la nueva tarea:");
     if(texto) {
@@ -593,7 +657,7 @@ function agregarTareaEnTurno() {
 }
 
 function eliminarTareaEnTurno(index) {
-    if(confirm("¿Eliminar esta tarea solo de este turno?")) {
+    if(confirm("¿Eliminar esta tarea del turno?")) {
         sesionActual.tareas.splice(index, 1);
         renderizarChecklistDesdeSesion();
         guardarProgreso();
@@ -607,7 +671,6 @@ function updateMatricula(i, val) {
 
 function verificarEstadoLiberacion(idAvion) {
     const totalItems = misChecklists.Liberacion.length;
-    // Recalcular checks marcados para este avion
     const checksDOM = document.querySelectorAll(`.sub-check-${idAvion}`);
     let marcadosIndices = [];
     let count = 0;
@@ -619,7 +682,6 @@ function verificarEstadoLiberacion(idAvion) {
         }
     });
     
-    // Actualizar sesión
     sesionActual.liberacionChecks[idAvion] = marcadosIndices;
 
     const card = document.getElementById(`cardAeronave${idAvion}`);
@@ -661,7 +723,7 @@ function addFoto(i) {
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         fotosAeronaves[i].push(canvas.toDataURL('image/jpeg', 0.7));
         renderGaleria(i);
-        guardarProgreso(); // Guardar al añadir foto
+        guardarProgreso(); 
         fileInput.value = ""; 
     }
   }
@@ -686,7 +748,7 @@ function addFotoObservaciones() {
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         fotosObservaciones.push(canvas.toDataURL('image/jpeg', 0.7));
         renderGaleriaObservaciones();
-        guardarProgreso(); // Guardar al añadir foto
+        guardarProgreso(); 
         fileInput.value = ""; 
     }
   }
@@ -731,7 +793,6 @@ function validarChecklist() {
     }
   }
   
-  // Validar checkboxes principales
   const tareasIncompletas = sesionActual.tareas.some(t => !t.hecho);
   if (tareasIncompletas) { alert("⚠️ Tareas de jornada incompletas."); return; }
   
@@ -747,7 +808,6 @@ function validarChecklist() {
   historial.push(registro);
   localStorage.setItem(mesClave, JSON.stringify(historial));
   
-  // LIMPIAR SESIÓN
   localStorage.removeItem("sesion_activa_qc");
   sesionActual = null;
   
@@ -772,8 +832,6 @@ function abrirEditor(indice) {
     
     indiceEditando = indice;
     document.getElementById("editObservaciones").value = registro.observaciones || "";
-    
-    // Si ya tiene fotos en observaciones, las cargamos. Si no, array vacío
     fotosEditando = registro.fotosObservaciones ? [...registro.fotosObservaciones] : [];
     
     renderGaleriaEdicion();
@@ -830,14 +888,13 @@ function guardarEdicion() {
     const mesClave = `historialQC_${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,"0")}`;
     const historial = JSON.parse(localStorage.getItem(mesClave));
     
-    // Actualizar registro
     historial[indiceEditando].observaciones = document.getElementById("editObservaciones").value;
     historial[indiceEditando].fotosObservaciones = [...fotosEditando];
     
     localStorage.setItem(mesClave, JSON.stringify(historial));
     alert("✅ Registro actualizado correctamente");
     cerrarEditor();
-    cargarHistorialMensual(); // Refrescar vista
+    cargarHistorialMensual(); 
 }
 
 // --- HISTORIAL ---
@@ -850,7 +907,6 @@ function cargarHistorialMensual() {
   const contenedor = document.getElementById("listaHistorial");
   if (historial.length === 0) { contenedor.innerHTML = "<p style='text-align:center; color:var(--muted);'>No hay registros.</p>"; return; }
   
-  // MODIFICADO: Añadido onClick para ver imagen y botón Editar
   contenedor.innerHTML = historial.map((reg, i) => `
     <div style="padding:15px; border:1px solid #1e293b; margin-bottom:12px; border-radius:15px; background:rgba(2, 6, 23, 0.8);">
       <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
@@ -874,7 +930,7 @@ function cargarHistorialMensual() {
     </div>`).join("");
 }
 
-// --- EXPORTAR: ESTRATEGIA ANEXO FOTOGRAFICO ---
+// --- EXPORTAR ---
 function exportarPDF(){
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
@@ -886,7 +942,6 @@ function exportarPDF(){
   doc.setFontSize(16); doc.setTextColor(56, 189, 248);
   doc.text("REPORTE MENSUAL QC", 14, 20);
 
-  // 1. TABLA SOLO DE TEXTO (Limpia y ordenada)
   const body = h.map(r => [
     r.fecha + "\n(" + r.horaFin + ")", 
     r.jornada + (r.matriculas ? "\n" + r.matriculas.map(m => "• " + m.id + " (" + m.hora + ")").join("\n") : ""), 
@@ -902,14 +957,10 @@ function exportarPDF(){
     columnStyles: { 0: {cellWidth: 40}, 1: {cellWidth: 60} }
   });
 
-  // 2. GENERACIÓN DE HOJAS DE ANEXO FOTOGRÁFICO
   let pageNumber = 1;
     
   h.forEach((reg, index) => {
-      // Recolectar todas las fotos de este registro
       let allPhotos = [];
-        
-      // Fotos de Matriculas
       if(reg.matriculas && Array.isArray(reg.matriculas)){
           reg.matriculas.forEach(m => {
              if(m.fotos && m.fotos.length > 0) {
@@ -919,43 +970,31 @@ function exportarPDF(){
              }
           });
       }
-        
-      // Fotos de Observaciones
       if(reg.fotosObservaciones && Array.isArray(reg.fotosObservaciones)){
           reg.fotosObservaciones.forEach((f, i) => {
               allPhotos.push({ src: f, label: `Observación General - Foto ${i+1}` });
           });
       }
-
-      // Si hay fotos, crear páginas nuevas para ellas
       if(allPhotos.length > 0) {
-          doc.addPage(); // Nueva hoja
+          doc.addPage(); 
           doc.setFontSize(14); doc.setTextColor(0, 0, 0);
           doc.text(`Anexo Fotográfico - Fecha: ${reg.fecha}`, 14, 15);
-            
           let yPos = 25;
           const pageHeight = doc.internal.pageSize.height;
-            
           allPhotos.forEach(photo => {
-              // Altura de imagen grande: 110mm (casi media hoja)
               const imgHeight = 110; 
-              const imgWidth = 170; // Ancho completo margen a margen
-                
-              // Si no cabe en la hoja actual, añadir otra
+              const imgWidth = 170; 
               if (yPos + imgHeight > pageHeight - 10) {
                   doc.addPage();
                   yPos = 20;
               }
-
               try {
                 doc.text(photo.label, 14, yPos - 2);
                 doc.addImage(photo.src, 'JPEG', 20, yPos, imgWidth, imgHeight);
-                // Marco opcional alrededor de la foto
                 doc.setDrawColor(200);
                 doc.rect(20, yPos, imgWidth, imgHeight);
               } catch(e) { console.error("Error imagen", e); }
-                
-              yPos += imgHeight + 15; // Espacio para la siguiente
+              yPos += imgHeight + 15;
           });
       }
   });
@@ -983,7 +1022,6 @@ function eliminarRegistro(i) {
 function volverAlInicio(){ document.getElementById("pantallaMenu").style.display = "none"; document.getElementById("pantallaInicio").style.display = "block"; }
 function volverAJornada(){ document.getElementById("pantallaTiempoExtra").style.display = "none"; document.getElementById("pantallaMenu").style.display = "block"; }
 function nuevaJornada(){ 
-    // Si hay una sesión activa, confirmar antes de recargar
     if(localStorage.getItem("sesion_activa_qc")){
         if(confirm("Hay un turno en curso. Si inicias uno nuevo, se perderá el actual. ¿Continuar?")) {
             localStorage.removeItem("sesion_activa_qc");
