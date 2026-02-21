@@ -224,7 +224,7 @@
     max-height: 90%; 
     border-radius: 8px; 
     box-shadow: 0 0 20px rgba(56, 189, 248, 0.5); 
-    transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94); /* Suaviza el zoom */
+    transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94); 
     cursor: zoom-in;
   }
   .close-modal { position: absolute; top: 20px; right: 20px; color: white; font-size: 30px; cursor: pointer; z-index: 1001; }
@@ -342,7 +342,12 @@
     </button>
     <input type="file" id="fileObservaciones" accept="image/*" style="display:none" onchange="addFotoObservaciones()">
     <div id="galeriaObservaciones" class="galeria-lib" style="margin-bottom:15px; margin-top:10px;"></div>
+    
     <button onclick="validarChecklist()"><i class="fas fa-save"></i> Finalizar Turno</button>
+    
+    <button onclick="pausarYVolverInicio()" class="btn-outline" style="margin-top: 15px; border-color: #475569;">
+        <i class="fas fa-arrow-left"></i> Pausar y Regresar a Inicio
+    </button>
     
   </section>
 
@@ -357,6 +362,10 @@
     <button onclick="nuevaJornada()"><i class="fas fa-redo"></i> Nueva jornada</button>
     <button onclick="exportarPDF()" class="btn-success"><i class="fas fa-file-pdf"></i> PDF</button>
     <button onclick="eliminarHistorial()" class="btn-danger"><i class="fas fa-trash-alt"></i> Borrar Mes</button>
+    
+    <button onclick="volverInicioDesdeHistorial()" class="btn-outline" style="margin-top: 15px; border-color: #475569;">
+        <i class="fas fa-arrow-left"></i> Regresar a Inicio
+    </button>
   </section>
 </main>
 
@@ -415,6 +424,15 @@ window.onload = async function() {
     if (sesionGuardada) {
         if(confirm("⚠️ Se detectó un turno sin finalizar. ¿Deseas restaurarlo?")) {
             sesionActual = sesionGuardada;
+            
+            // Verificación de seguridad para la nueva función de "LiberacionItems"
+            if (!sesionActual.liberacionItems) {
+                sesionActual.liberacionItems = {
+                    1: [...misChecklists.Liberacion], 2: [...misChecklists.Liberacion],
+                    3: [...misChecklists.Liberacion], 4: [...misChecklists.Liberacion]
+                };
+            }
+
             fotosAeronaves = sesionActual.fotosAeronaves || { 1: [], 2: [], 3: [], 4: [] };
             fotosObservaciones = sesionActual.fotosObservaciones || [];
             document.getElementById("pantallaInicio").style.display = "none";
@@ -500,6 +518,11 @@ function inicializarSesion(tipo, esExtraStr) {
         esExtra: esExtraStr,
         tareas: tareasIniciales.map(t => ({ texto: t, hecho: false, hora: null })),
         liberacionChecks: { 1: [], 2: [], 3: [], 4: [] },
+        // Novedad: Guardamos copias independientes de las listas de liberación para poder agregar items.
+        liberacionItems: {
+            1: [...misChecklists.Liberacion], 2: [...misChecklists.Liberacion],
+            3: [...misChecklists.Liberacion], 4: [...misChecklists.Liberacion]
+        },
         matriculas: { 1: "", 2: "", 3: "", 4: "" },
         matriculasHoras: { 1: null, 2: null, 3: null, 4: null },
         observaciones: "",
@@ -511,6 +534,23 @@ function inicializarSesion(tipo, esExtraStr) {
     document.getElementById("pantallaChecklist").style.display = "block";
     renderizarChecklistDesdeSesion();
     guardarProgreso();
+}
+
+// --- NUEVOS BOTONES DE RETROCESO ---
+function pausarYVolverInicio() {
+    // Simplemente oculta la pantalla del turno y muestra el inicio. 
+    // Como la sesión ya está guardada en LocalForage, no se pierde nada.
+    document.getElementById("pantallaChecklist").style.display = "none";
+    document.getElementById("pantallaInicio").style.display = "block";
+}
+
+function volverInicioDesdeHistorial() {
+    document.querySelectorAll("section").forEach(s => s.style.display = "none");
+    if (sesionActual) {
+        document.getElementById("pantallaChecklist").style.display = "block";
+    } else {
+        document.getElementById("pantallaInicio").style.display = "block";
+    }
 }
 
 // --- RENDERIZADO Y MODOS DEL CHECKLIST ---
@@ -559,19 +599,34 @@ function renderizarChecklistDesdeSesion() {
 
     if (sesionActual.tipo !== "Curso") {
         contenedor.innerHTML += `<h3><i class="fas fa-shield-alt"></i> Liberación de Aeronaves</h3>`;
-        const itemsLibDinamicos = misChecklists.Liberacion;
         
         for (let i = 1; i <= 4; i++) {
             let miniItemsHTML = "";
+            const itemsLibDinamicos = sesionActual.liberacionItems[i];
+            
             itemsLibDinamicos.forEach((subItem, subIndex) => {
                 const isChecked = sesionActual.liberacionChecks[i] && sesionActual.liberacionChecks[i].includes(subIndex) ? "checked" : "";
+                
+                let btnDelete = "";
+                if (modoEdicionActivo) {
+                    btnDelete = `<button class="btn-del-task" style="width:20px; height:20px; font-size:10px; margin-left:auto; padding:0; flex-shrink:0;" onclick="eliminarPendienteLiberacion(${i}, ${subIndex})"><i class="fas fa-times"></i></button>`;
+                }
+
                 miniItemsHTML += `
-                    <div class="mini-option">
+                    <div class="mini-option" style="align-items:center;">
                         <input type="checkbox" class="sub-check-${i}" data-idx="${subIndex}" ${isChecked} onchange="verificarEstadoLiberacion(${i})">
-                        <span>${subItem}</span>
+                        <span style="flex-grow:1;">${subItem}</span>
+                        ${btnDelete}
                     </div>
                 `;
             });
+            
+            // Botón rápido para agregar pendiente
+            miniItemsHTML += `
+                <div style="grid-column: 1 / -1; text-align: right; margin-top: 5px;">
+                    <span style="font-size: 11px; color: var(--accent); cursor: pointer; font-weight: bold; background: rgba(56,189,248,0.1); padding: 4px 8px; border-radius: 6px;" onclick="agregarPendienteLiberacion(${i})"><i class="fas fa-plus"></i> Añadir pendiente extra</span>
+                </div>
+            `;
 
             const valMat = sesionActual.matriculas[i] || "";
             const estadoTexto = sesionActual.matriculasHoras[i] ? `LIBERADO: ${sesionActual.matriculasHoras[i]}` : "Pendiente de liberar";
@@ -597,6 +652,28 @@ function renderizarChecklistDesdeSesion() {
     }
     document.getElementById("observacionesTurno").value = sesionActual.observaciones || "";
     renderGaleriaObservaciones();
+}
+
+// --- NUEVAS FUNCIONES: AGREGAR Y ELIMINAR PENDIENTES DE AERONAVE ---
+function agregarPendienteLiberacion(idAvion) {
+    const texto = prompt("Describe el pendiente para el Equipo " + idAvion + ":");
+    if(texto) {
+        sesionActual.liberacionItems[idAvion].push(texto);
+        renderizarChecklistDesdeSesion();
+        verificarEstadoLiberacion(idAvion); 
+        guardarProgreso();
+    }
+}
+
+function eliminarPendienteLiberacion(idAvion, subIndex) {
+    if(confirm("¿Eliminar este elemento del equipo?")) {
+        sesionActual.liberacionItems[idAvion].splice(subIndex, 1);
+        sesionActual.liberacionChecks[idAvion] = []; // Reinicia los checks por seguridad
+        renderizarChecklistDesdeSesion();
+        verificarEstadoLiberacion(idAvion);
+        guardarProgreso();
+        alert("Elemento eliminado. Por favor, vuelve a marcar las casillas listas en este equipo.");
+    }
 }
 
 async function guardarProgreso() {
@@ -640,7 +717,7 @@ function eliminarTareaEnTurno(index) {
 function updateMatricula(i, val) { sesionActual.matriculas[i] = val; guardarProgreso(); }
 
 function verificarEstadoLiberacion(idAvion) {
-    const totalItems = misChecklists.Liberacion.length;
+    const totalItems = sesionActual.liberacionItems[idAvion].length; // Ahora verifica la longitud de ESA aeronave
     const checksDOM = document.querySelectorAll(`.sub-check-${idAvion}`);
     let marcadosIndices = [];
     let count = 0;
@@ -674,12 +751,12 @@ function addFoto(i) {
     img.onload = function() {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
-        const MAX_WIDTH = 1200; // Incrementado para mejor calidad
+        const MAX_WIDTH = 1200; 
         const scale = MAX_WIDTH / img.width;
         canvas.width = MAX_WIDTH;
         canvas.height = img.height * scale;
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        fotosAeronaves[i].push(canvas.toDataURL('image/jpeg', 0.85)); // Compresión menos agresiva
+        fotosAeronaves[i].push(canvas.toDataURL('image/jpeg', 0.85)); 
         renderGaleria(i);
         guardarProgreso(); fileInput.value = ""; 
     }
@@ -698,7 +775,7 @@ function addFotoObservaciones() {
     img.onload = function() {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
-        const MAX_WIDTH = 1200; // Incrementado
+        const MAX_WIDTH = 1200; 
         const scale = MAX_WIDTH / img.width;
         canvas.width = MAX_WIDTH;
         canvas.height = img.height * scale;
@@ -777,19 +854,18 @@ function verImagenGrande(src) {
 }
 
 function hacerZoom(event) {
-    event.stopPropagation(); // Evita que se cierre el visor al tocar la imagen
+    event.stopPropagation(); 
     const img = document.getElementById("imgFull");
     
     if (nivelZoom === 1) {
-        nivelZoom = 2.5; // Zoom In
+        nivelZoom = 2.5; 
         img.style.cursor = "zoom-out";
-        // Calcular dónde se hizo el toque para hacer el zoom centrado ahí
         const rect = img.getBoundingClientRect();
         const x = ((event.clientX - rect.left) / rect.width) * 100;
         const y = ((event.clientY - rect.top) / rect.height) * 100;
         img.style.transformOrigin = `${x}% ${y}%`;
     } else {
-        nivelZoom = 1; // Zoom Out
+        nivelZoom = 1; 
         img.style.cursor = "zoom-in";
         img.style.transformOrigin = "center center";
     }
@@ -833,7 +909,7 @@ function addFotoEdicion() {
     img.onload = function() {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
-        const MAX_WIDTH = 1200; // Incrementado
+        const MAX_WIDTH = 1200; 
         const scale = MAX_WIDTH / img.width;
         canvas.width = MAX_WIDTH;
         canvas.height = img.height * scale;
@@ -890,7 +966,7 @@ async function cargarHistorialMensual() {
     </div>`).join("");
 }
 
-// --- EXPORTAR PDF (PROPORCIONES CORRECTAS) ---
+// --- EXPORTAR PDF ---
 async function exportarPDF(){
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
@@ -939,14 +1015,10 @@ async function exportarPDF(){
           
           allPhotos.forEach(photo => {
               try {
-                // Leer las propiedades originales de la imagen
                 const props = doc.getImageProperties(photo.src);
-                
-                // Calcular dimensiones proporcionales para no deformar
-                let pdfImgWidth = 170; // Ancho máximo
+                let pdfImgWidth = 170; 
                 let pdfImgHeight = (props.height * pdfImgWidth) / props.width;
                 
-                // Si la imagen es demasiado alta, la reducimos
                 const maxPdfHeight = 240;
                 if (pdfImgHeight > maxPdfHeight) {
                     pdfImgHeight = maxPdfHeight;
@@ -955,7 +1027,6 @@ async function exportarPDF(){
 
                 if (yPos + pdfImgHeight > pageHeight - 10) { doc.addPage(); yPos = 20; }
                 
-                // Centrar la imagen
                 const xPos = 20 + (170 - pdfImgWidth) / 2;
 
                 doc.text(photo.label, 14, yPos - 2);
