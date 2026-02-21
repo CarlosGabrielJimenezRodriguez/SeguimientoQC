@@ -346,7 +346,7 @@
     <button onclick="validarChecklist()"><i class="fas fa-save"></i> Finalizar Turno</button>
     
     <button onclick="pausarYVolverInicio()" class="btn-outline" style="margin-top: 15px; border-color: #475569;">
-        <i class="fas fa-arrow-left"></i> Pausar y Regresar a Inicio
+        <i class="fas fa-arrow-left"></i> Regresar al paso anterior
     </button>
     
   </section>
@@ -364,7 +364,7 @@
     <button onclick="eliminarHistorial()" class="btn-danger"><i class="fas fa-trash-alt"></i> Borrar Mes</button>
     
     <button onclick="volverInicioDesdeHistorial()" class="btn-outline" style="margin-top: 15px; border-color: #475569;">
-        <i class="fas fa-arrow-left"></i> Regresar a Inicio
+        <i class="fas fa-arrow-left"></i> Regresar
     </button>
   </section>
 </main>
@@ -425,7 +425,6 @@ window.onload = async function() {
         if(confirm("⚠️ Se detectó un turno sin finalizar. ¿Deseas restaurarlo?")) {
             sesionActual = sesionGuardada;
             
-            // Verificación de seguridad para la nueva función de "LiberacionItems"
             if (!sesionActual.liberacionItems) {
                 sesionActual.liberacionItems = {
                     1: [...misChecklists.Liberacion], 2: [...misChecklists.Liberacion],
@@ -518,7 +517,6 @@ function inicializarSesion(tipo, esExtraStr) {
         esExtra: esExtraStr,
         tareas: tareasIniciales.map(t => ({ texto: t, hecho: false, hora: null })),
         liberacionChecks: { 1: [], 2: [], 3: [], 4: [] },
-        // Novedad: Guardamos copias independientes de las listas de liberación para poder agregar items.
         liberacionItems: {
             1: [...misChecklists.Liberacion], 2: [...misChecklists.Liberacion],
             3: [...misChecklists.Liberacion], 4: [...misChecklists.Liberacion]
@@ -536,12 +534,15 @@ function inicializarSesion(tipo, esExtraStr) {
     guardarProgreso();
 }
 
-// --- NUEVOS BOTONES DE RETROCESO ---
+// --- BOTONES DE RETROCESO CORREGIDOS ---
 function pausarYVolverInicio() {
-    // Simplemente oculta la pantalla del turno y muestra el inicio. 
-    // Como la sesión ya está guardada en LocalForage, no se pierde nada.
     document.getElementById("pantallaChecklist").style.display = "none";
-    document.getElementById("pantallaInicio").style.display = "block";
+    // Si la sesión era de curso, el paso anterior fue la pantalla de menú de jornada. Si no, fue la pregunta de tiempo extra.
+    if (sesionActual && sesionActual.tipo === "Curso") {
+        document.getElementById("pantallaMenu").style.display = "block";
+    } else {
+        document.getElementById("pantallaTiempoExtra").style.display = "block";
+    }
 }
 
 function volverInicioDesdeHistorial() {
@@ -621,7 +622,6 @@ function renderizarChecklistDesdeSesion() {
                 `;
             });
             
-            // Botón rápido para agregar pendiente
             miniItemsHTML += `
                 <div style="grid-column: 1 / -1; text-align: right; margin-top: 5px;">
                     <span style="font-size: 11px; color: var(--accent); cursor: pointer; font-weight: bold; background: rgba(56,189,248,0.1); padding: 4px 8px; border-radius: 6px;" onclick="agregarPendienteLiberacion(${i})"><i class="fas fa-plus"></i> Añadir pendiente extra</span>
@@ -654,7 +654,6 @@ function renderizarChecklistDesdeSesion() {
     renderGaleriaObservaciones();
 }
 
-// --- NUEVAS FUNCIONES: AGREGAR Y ELIMINAR PENDIENTES DE AERONAVE ---
 function agregarPendienteLiberacion(idAvion) {
     const texto = prompt("Describe el pendiente para el Equipo " + idAvion + ":");
     if(texto) {
@@ -668,7 +667,7 @@ function agregarPendienteLiberacion(idAvion) {
 function eliminarPendienteLiberacion(idAvion, subIndex) {
     if(confirm("¿Eliminar este elemento del equipo?")) {
         sesionActual.liberacionItems[idAvion].splice(subIndex, 1);
-        sesionActual.liberacionChecks[idAvion] = []; // Reinicia los checks por seguridad
+        sesionActual.liberacionChecks[idAvion] = []; 
         renderizarChecklistDesdeSesion();
         verificarEstadoLiberacion(idAvion);
         guardarProgreso();
@@ -717,7 +716,7 @@ function eliminarTareaEnTurno(index) {
 function updateMatricula(i, val) { sesionActual.matriculas[i] = val; guardarProgreso(); }
 
 function verificarEstadoLiberacion(idAvion) {
-    const totalItems = sesionActual.liberacionItems[idAvion].length; // Ahora verifica la longitud de ESA aeronave
+    const totalItems = sesionActual.liberacionItems[idAvion].length;
     const checksDOM = document.querySelectorAll(`.sub-check-${idAvion}`);
     let marcadosIndices = [];
     let count = 0;
@@ -739,7 +738,6 @@ function verificarEstadoLiberacion(idAvion) {
     guardarProgreso();
 }
 
-// LÓGICA DE FOTOS OPTIMIZADA (MAYOR RESOLUCIÓN Y CALIDAD)
 function addFoto(i) {
   const fileInput = document.getElementById(`file${i}`);
   const file = fileInput.files[0];
@@ -841,7 +839,6 @@ async function validarChecklist() {
   irAHistorial();
 }
 
-// --- VISOR DE IMÁGENES CON ZOOM INTELIGENTE ---
 let nivelZoom = 1;
 
 function verImagenGrande(src) {
@@ -874,7 +871,6 @@ function hacerZoom(event) {
 
 function cerrarVisor() { document.getElementById("visorImg").style.display = "none"; }
 
-// --- EDICIÓN DE HISTORIAL ---
 async function abrirEditor(indice) {
     const mesClave = `historialQC_${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,"0")}`;
     const historial = await localforage.getItem(mesClave);
@@ -931,7 +927,6 @@ async function guardarEdicion() {
     alert("✅ Registro actualizado correctamente"); cerrarEditor(); cargarHistorialMensual(); 
 }
 
-// --- HISTORIAL ---
 async function cargarHistorialMensual() {
   const ahora = new Date();
   const mesClave = `historialQC_${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, "0")}`;
@@ -966,7 +961,6 @@ async function cargarHistorialMensual() {
     </div>`).join("");
 }
 
-// --- EXPORTAR PDF ---
 async function exportarPDF(){
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
