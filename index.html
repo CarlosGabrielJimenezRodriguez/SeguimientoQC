@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Seguimiento QC - Reporte Fotográfico</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
+
 <style>
   :root {
     --bg: #0f172a;
@@ -225,8 +229,6 @@
     max-height: 90vh; overflow-y: auto;
   }
 </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
 
@@ -385,11 +387,8 @@ const checklistsBase = {
   ]
 };
 
-let misChecklists = JSON.parse(localStorage.getItem("configChecklistsQC")) || checklistsBase;
-if (!misChecklists.Liberacion) {
-    misChecklists.Liberacion = checklistsBase.Liberacion;
-    localStorage.setItem("configChecklistsQC", JSON.stringify(misChecklists));
-}
+// Variable base que se llenará con la memoria al cargar
+let misChecklists = checklistsBase;
 
 let fotosAeronaves = { 1: [], 2: [], 3: [], 4: [] };
 let fotosObservaciones = [];
@@ -399,26 +398,39 @@ let fotosEditando = [];
 
 // VARIABLE PARA LA SESIÓN ACTIVA (Persistencia)
 let sesionActual = null;
-let modoEdicionActivo = false; // Controla si estamos reorganizando
+let modoEdicionActivo = false; 
 
-// --- INICIO Y RESTAURACIÓN ---
-window.onload = function() {
-    const sesionGuardada = localStorage.getItem("sesion_activa_qc");
+// --- INICIO Y RESTAURACIÓN (MOTOR ASÍNCRONO) ---
+window.onload = async function() {
+    // 1. Cargar las listas guardadas desde IndexedDB
+    const listasGuardadas = await localforage.getItem("configChecklistsQC");
+    if (listasGuardadas) {
+        misChecklists = listasGuardadas;
+    }
+    
+    // Validar si falta la de liberación (por actualizaciones previas)
+    if (!misChecklists.Liberacion) {
+        misChecklists.Liberacion = checklistsBase.Liberacion;
+        await localforage.setItem("configChecklistsQC", misChecklists);
+    }
+
+    // 2. Revisar si hay una sesión pendiente
+    const sesionGuardada = await localforage.getItem("sesion_activa_qc");
     if (sesionGuardada) {
         if(confirm("⚠️ Se detectó un turno sin finalizar. ¿Deseas restaurarlo?")) {
-            sesionActual = JSON.parse(sesionGuardada);
+            sesionActual = sesionGuardada; // Ya es objeto, no requiere JSON.parse
             fotosAeronaves = sesionActual.fotosAeronaves || { 1: [], 2: [], 3: [], 4: [] };
             fotosObservaciones = sesionActual.fotosObservaciones || [];
             document.getElementById("pantallaInicio").style.display = "none";
             document.getElementById("pantallaChecklist").style.display = "block";
             renderizarChecklistDesdeSesion();
         } else {
-            localStorage.removeItem("sesion_activa_qc");
+            await localforage.removeItem("sesion_activa_qc");
         }
     }
 };
 
-// --- CONFIG MAESTRA (Antes del turno) ---
+// --- CONFIG MAESTRA ---
 function irAConfig() {
     document.getElementById("pantallaInicio").style.display = "none";
     document.getElementById("pantallaConfig").style.display = "block";
@@ -441,17 +453,20 @@ function renderEditor() {
 function actualizarTarea(tipo, index, valor) { misChecklists[tipo][index] = valor; }
 function eliminarTarea(tipo, index) { misChecklists[tipo].splice(index, 1); renderEditor(); }
 function agregarTarea() { const tipo = document.getElementById("selectTipoConfig").value; misChecklists[tipo].push("Nuevo ítem..."); renderEditor(); }
-function guardarConfig() {
-    localStorage.setItem("configChecklistsQC", JSON.stringify(misChecklists));
+
+// Convertido a motor nuevo
+async function guardarConfig() {
+    await localforage.setItem("configChecklistsQC", misChecklists);
     alert("✅ Listas actualizadas.");
 }
+
 function volverAlInicioDesdeConfig() {
     document.getElementById("pantallaConfig").style.display = "none";
     document.getElementById("pantallaInicio").style.display = "block";
 }
 
 // --- FLUJO ---
-document.getElementById("formInicio").addEventListener("submit", function(e) {
+document.getElementById("formInicio").addEventListener("submit", async function(e) {
   e.preventDefault();
   const datos = {
     nombre: document.getElementById("nombre").value.trim(),
@@ -459,31 +474,30 @@ document.getElementById("formInicio").addEventListener("submit", function(e) {
     fecha: document.getElementById("fecha").value,
     horaEntrada: document.getElementById("horaEntrada").value
   };
-  localStorage.setItem("colaboradorQC", JSON.stringify(datos));
+  await localforage.setItem("colaboradorQC", datos);
   document.getElementById("pantallaInicio").style.display = "none";
   document.getElementById("pantallaMenu").style.display = "block";
 });
 
-function seleccionarJornada(tipo){
-  localStorage.setItem("tipoJornadaQC", tipo);
+async function seleccionarJornada(tipo){
+  await localforage.setItem("tipoJornadaQC", tipo);
   document.getElementById("pantallaMenu").style.display = "none";
   if(tipo === "Curso"){
-    localStorage.setItem("esTiempoExtraQC", "NO");
+    await localforage.setItem("esTiempoExtraQC", "NO");
     inicializarSesion(tipo, "NO");
   } else {
     document.getElementById("pantallaTiempoExtra").style.display = "block";
   }
 }
 
-function seleccionarTiempoExtra(esExtra){
+async function seleccionarTiempoExtra(esExtra){
   const strExtra = esExtra ? "SI" : "NO";
-  localStorage.setItem("esTiempoExtraQC", strExtra);
-  const tipo = localStorage.getItem("tipoJornadaQC");
+  await localforage.setItem("esTiempoExtraQC", strExtra);
+  const tipo = await localforage.getItem("tipoJornadaQC");
   document.getElementById("pantallaTiempoExtra").style.display = "none";
   inicializarSesion(tipo, strExtra);
 }
 
-// Inicializa la estructura de la sesión y la guarda
 function inicializarSesion(tipo, esExtraStr) {
     let tareasIniciales = [...misChecklists[tipo]];
     if(esExtraStr === "SI" && tipo !== "Curso") tareasIniciales = tareasIniciales.concat(misChecklists.Extra);
@@ -492,7 +506,7 @@ function inicializarSesion(tipo, esExtraStr) {
         tipo: tipo,
         esExtra: esExtraStr,
         tareas: tareasIniciales.map(t => ({ texto: t, hecho: false, hora: null })),
-        liberacionChecks: { 1: [], 2: [], 3: [], 4: [] }, // Guarda IDs de checks marcados
+        liberacionChecks: { 1: [], 2: [], 3: [], 4: [] },
         matriculas: { 1: "", 2: "", 3: "", 4: "" },
         matriculasHoras: { 1: null, 2: null, 3: null, 4: null },
         observaciones: "",
@@ -500,7 +514,6 @@ function inicializarSesion(tipo, esExtraStr) {
         fotosObservaciones: []
     };
     
-    // Limpiar fotos memoria ram
     fotosAeronaves = { 1: [], 2: [], 3: [], 4: [] };
     fotosObservaciones = [];
 
@@ -533,12 +546,9 @@ function renderizarChecklistDesdeSesion() {
     const contenedor = document.getElementById("listaChecklist");
     contenedor.innerHTML = "";
 
-    // 1. Renderizar Tareas
     sesionActual.tareas.forEach((itemObj, index) => {
         let contenidoItem = "";
-        
         if (modoEdicionActivo) {
-            // MODO EDICIÓN: Flechas para ordenar y Papelera para borrar
             contenidoItem = `
                 <div style="display:flex; gap:5px;">
                     <button class="btn-move" onclick="moverTarea(${index}, -1)">⬆</button>
@@ -548,7 +558,6 @@ function renderizarChecklistDesdeSesion() {
                 <button class="btn-del-task" onclick="eliminarTareaEnTurno(${index})"><i class="fas fa-trash"></i></button>
             `;
         } else {
-            // MODO NORMAL: Checkbox y Hora
             const checked = itemObj.hecho ? "checked" : "";
             const horaText = itemObj.hora ? ` ✔ ${itemObj.hora}` : "";
             contenidoItem = `
@@ -556,13 +565,9 @@ function renderizarChecklistDesdeSesion() {
                 <label for="item${index}">${itemObj.texto} <small id="hora${index}">${horaText}</small></label>
             `;
         }
-
         contenedor.innerHTML += `<div>${contenidoItem}</div>`;
     });
 
-    // 2. Renderizar Liberación (si no es curso)
-    // Solo mostramos la liberación si NO estamos editando, o si quieres editarla también, avísame.
-    // Por ahora la dejaré visible siempre, pero el reordenar solo aplica a las tareas de arriba.
     if (sesionActual.tipo !== "Curso") {
         contenedor.innerHTML += `<h3><i class="fas fa-shield-alt"></i> Liberación de Aeronaves</h3>`;
         const itemsLibDinamicos = misChecklists.Liberacion;
@@ -570,9 +575,7 @@ function renderizarChecklistDesdeSesion() {
         for (let i = 1; i <= 4; i++) {
             let miniItemsHTML = "";
             itemsLibDinamicos.forEach((subItem, subIndex) => {
-                const checkKey = `${i}-${subIndex}`;
                 const isChecked = sesionActual.liberacionChecks[i] && sesionActual.liberacionChecks[i].includes(subIndex) ? "checked" : "";
-                
                 miniItemsHTML += `
                     <div class="mini-option">
                         <input type="checkbox" class="sub-check-${i}" data-idx="${subIndex}" ${isChecked} onchange="verificarEstadoLiberacion(${i})">
@@ -600,23 +603,20 @@ function renderizarChecklistDesdeSesion() {
                 <small id="tsLib${i}" style="font-size:12px; color:${colorEstado}; font-weight:bold; opacity:${opacityEstado};">${estadoTexto}</small>
               </div>
             </div>`;
-            
             setTimeout(() => renderGaleria(i), 0);
         }
     }
-    
     document.getElementById("observacionesTurno").value = sesionActual.observaciones || "";
     renderGaleriaObservaciones();
 }
 
-// --- LÓGICA DE PERSISTENCIA Y CAMBIOS ---
-
-function guardarProgreso() {
+// --- LÓGICA DE PERSISTENCIA SEGURA ---
+async function guardarProgreso() {
     if(!sesionActual) return;
     sesionActual.observaciones = document.getElementById("observacionesTurno").value;
     sesionActual.fotosAeronaves = fotosAeronaves;
     sesionActual.fotosObservaciones = fotosObservaciones;
-    localStorage.setItem("sesion_activa_qc", JSON.stringify(sesionActual));
+    await localforage.setItem("sesion_activa_qc", sesionActual);
 }
 
 function toggleTarea(index) {
@@ -632,17 +632,12 @@ function toggleTarea(index) {
     guardarProgreso();
 }
 
-// FUNCIONES NUEVAS: Mover Items
 function moverTarea(index, direccion) {
     const nuevaPos = index + direccion;
-    // Verificar límites
     if (nuevaPos < 0 || nuevaPos >= sesionActual.tareas.length) return;
-    
-    // Intercambiar elementos
     const temp = sesionActual.tareas[index];
     sesionActual.tareas[index] = sesionActual.tareas[nuevaPos];
     sesionActual.tareas[nuevaPos] = temp;
-    
     renderizarChecklistDesdeSesion();
     guardarProgreso();
 }
@@ -674,16 +669,11 @@ function verificarEstadoLiberacion(idAvion) {
     const checksDOM = document.querySelectorAll(`.sub-check-${idAvion}`);
     let marcadosIndices = [];
     let count = 0;
-    
     checksDOM.forEach(chk => {
-        if(chk.checked) {
-            marcadosIndices.push(parseInt(chk.dataset.idx));
-            count++;
-        }
+        if(chk.checked) { marcadosIndices.push(parseInt(chk.dataset.idx)); count++; }
     });
     
     sesionActual.liberacionChecks[idAvion] = marcadosIndices;
-
     const card = document.getElementById(`cardAeronave${idAvion}`);
     const labelEstado = document.getElementById(`tsLib${idAvion}`);
 
@@ -778,7 +768,7 @@ function removeFoto(i, index) {
     guardarProgreso();
 }
 
-function validarChecklist() {
+async function validarChecklist() {
   const tipo = sesionActual.tipo;
   let matriculasData = [];
   if (tipo !== "Curso") {
@@ -796,19 +786,20 @@ function validarChecklist() {
   const tareasIncompletas = sesionActual.tareas.some(t => !t.hecho);
   if (tareasIncompletas) { alert("⚠️ Tareas de jornada incompletas."); return; }
   
-  const colaborador = JSON.parse(localStorage.getItem("colaboradorQC"));
+  const colaborador = await localforage.getItem("colaboradorQC");
   const registro = {
     nombre: colaborador.nombre, empleado: colaborador.empleado, fecha: colaborador.fecha,
     jornada: tipo, matriculas: matriculasData, tiempoExtra: sesionActual.esExtra,
     horaFin: new Date().toLocaleTimeString(), observaciones: document.getElementById("observacionesTurno").value.trim(),
     fotosObservaciones: [...fotosObservaciones]
   };
-  const mesClave = `historialQC_${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,"0")}`;
-  const historial = JSON.parse(localStorage.getItem(mesClave)) || [];
-  historial.push(registro);
-  localStorage.setItem(mesClave, JSON.stringify(historial));
   
-  localStorage.removeItem("sesion_activa_qc");
+  const mesClave = `historialQC_${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,"0")}`;
+  const historial = await localforage.getItem(mesClave) || [];
+  historial.push(registro);
+  
+  await localforage.setItem(mesClave, historial);
+  await localforage.removeItem("sesion_activa_qc");
   sesionActual = null;
   
   alert("✅ Turno Finalizado");
@@ -820,14 +811,12 @@ function verImagenGrande(src) {
     document.getElementById("imgFull").src = src;
     document.getElementById("visorImg").style.display = "flex";
 }
-function cerrarVisor() {
-    document.getElementById("visorImg").style.display = "none";
-}
+function cerrarVisor() { document.getElementById("visorImg").style.display = "none"; }
 
 // --- EDICIÓN DE HISTORIAL ---
-function abrirEditor(indice) {
+async function abrirEditor(indice) {
     const mesClave = `historialQC_${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,"0")}`;
-    const historial = JSON.parse(localStorage.getItem(mesClave));
+    const historial = await localforage.getItem(mesClave);
     const registro = historial[indice];
     
     indiceEditando = indice;
@@ -853,11 +842,7 @@ function renderGaleriaEdicion() {
         </div>
     `).join('');
 }
-
-function eliminarFotoEdicion(index) {
-    fotosEditando.splice(index, 1);
-    renderGaleriaEdicion();
-}
+function eliminarFotoEdicion(index) { fotosEditando.splice(index, 1); renderGaleriaEdicion(); }
 
 function addFotoEdicion() {
   const fileInput = document.getElementById('fileEdit');
@@ -883,28 +868,30 @@ function addFotoEdicion() {
   reader.readAsDataURL(file);
 }
 
-function guardarEdicion() {
+async function guardarEdicion() {
     if(indiceEditando === -1) return;
     const mesClave = `historialQC_${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,"0")}`;
-    const historial = JSON.parse(localStorage.getItem(mesClave));
+    const historial = await localforage.getItem(mesClave);
     
     historial[indiceEditando].observaciones = document.getElementById("editObservaciones").value;
     historial[indiceEditando].fotosObservaciones = [...fotosEditando];
     
-    localStorage.setItem(mesClave, JSON.stringify(historial));
+    await localforage.setItem(mesClave, historial);
     alert("✅ Registro actualizado correctamente");
     cerrarEditor();
     cargarHistorialMensual(); 
 }
 
 // --- HISTORIAL ---
-function cargarHistorialMensual() {
+async function cargarHistorialMensual() {
   const ahora = new Date();
   const mesClave = `historialQC_${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, "0")}`;
-  const historial = JSON.parse(localStorage.getItem(mesClave)) || [];
+  const historial = await localforage.getItem(mesClave) || [];
+  
   document.getElementById("statJornadas").innerText = historial.length;
   document.getElementById("statExtra").innerText = historial.filter(r => r.tiempoExtra === "SI").length;
   const contenedor = document.getElementById("listaHistorial");
+  
   if (historial.length === 0) { contenedor.innerHTML = "<p style='text-align:center; color:var(--muted);'>No hay registros.</p>"; return; }
   
   contenedor.innerHTML = historial.map((reg, i) => `
@@ -931,12 +918,12 @@ function cargarHistorialMensual() {
 }
 
 // --- EXPORTAR ---
-function exportarPDF(){
+async function exportarPDF(){
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
   const ahora = new Date();
   const mesClave = `historialQC_${ahora.getFullYear()}-${String(ahora.getMonth()+1).padStart(2,"0")}`;
-  const h = JSON.parse(localStorage.getItem(mesClave)) || [];
+  const h = await localforage.getItem(mesClave) || [];
   if(h.length === 0){ alert("No hay datos"); return; }
 
   doc.setFontSize(16); doc.setTextColor(56, 189, 248);
@@ -957,23 +944,17 @@ function exportarPDF(){
     columnStyles: { 0: {cellWidth: 40}, 1: {cellWidth: 60} }
   });
 
-  let pageNumber = 1;
-    
   h.forEach((reg, index) => {
       let allPhotos = [];
       if(reg.matriculas && Array.isArray(reg.matriculas)){
           reg.matriculas.forEach(m => {
              if(m.fotos && m.fotos.length > 0) {
-                 m.fotos.forEach((f, i) => {
-                     allPhotos.push({ src: f, label: `Aeronave: ${m.id} - Foto ${i+1}` });
-                 });
+                 m.fotos.forEach((f, i) => { allPhotos.push({ src: f, label: `Aeronave: ${m.id} - Foto ${i+1}` }); });
              }
           });
       }
       if(reg.fotosObservaciones && Array.isArray(reg.fotosObservaciones)){
-          reg.fotosObservaciones.forEach((f, i) => {
-              allPhotos.push({ src: f, label: `Observación General - Foto ${i+1}` });
-          });
+          reg.fotosObservaciones.forEach((f, i) => { allPhotos.push({ src: f, label: `Observación General - Foto ${i+1}` }); });
       }
       if(allPhotos.length > 0) {
           doc.addPage(); 
@@ -984,21 +965,16 @@ function exportarPDF(){
           allPhotos.forEach(photo => {
               const imgHeight = 110; 
               const imgWidth = 170; 
-              if (yPos + imgHeight > pageHeight - 10) {
-                  doc.addPage();
-                  yPos = 20;
-              }
+              if (yPos + imgHeight > pageHeight - 10) { doc.addPage(); yPos = 20; }
               try {
                 doc.text(photo.label, 14, yPos - 2);
                 doc.addImage(photo.src, 'JPEG', 20, yPos, imgWidth, imgHeight);
-                doc.setDrawColor(200);
-                doc.rect(20, yPos, imgWidth, imgHeight);
+                doc.setDrawColor(200); doc.rect(20, yPos, imgWidth, imgHeight);
               } catch(e) { console.error("Error imagen", e); }
               yPos += imgHeight + 15;
           });
       }
   });
-
   doc.save(`Reporte_QC_${mesClave}.pdf`);
 }
 
@@ -1007,34 +983,40 @@ function filtrarHistorial() {
   const tarjetas = document.querySelectorAll("#listaHistorial > div");
   tarjetas.forEach(t => t.style.display = t.innerText.toLowerCase().includes(busqueda) ? "block" : "none");
 }
-function irAHistorial(){
+
+async function irAHistorial(){
   document.querySelectorAll("section").forEach(s => s.style.display = "none");
   document.getElementById("pantallaHistorial").style.display = "block";
-  cargarHistorialMensual();
+  await cargarHistorialMensual();
 }
-function eliminarRegistro(i) {
+
+async function eliminarRegistro(i) {
   const mesClave = `historialQC_${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}`;
-  let h = JSON.parse(localStorage.getItem(mesClave));
+  let h = await localforage.getItem(mesClave);
   h.splice(i, 1);
-  localStorage.setItem(mesClave, JSON.stringify(h));
+  await localforage.setItem(mesClave, h);
   cargarHistorialMensual();
 }
+
 function volverAlInicio(){ document.getElementById("pantallaMenu").style.display = "none"; document.getElementById("pantallaInicio").style.display = "block"; }
 function volverAJornada(){ document.getElementById("pantallaTiempoExtra").style.display = "none"; document.getElementById("pantallaMenu").style.display = "block"; }
-function nuevaJornada(){ 
-    if(localStorage.getItem("sesion_activa_qc")){
+
+async function nuevaJornada(){ 
+    const sesion = await localforage.getItem("sesion_activa_qc");
+    if(sesion){
         if(confirm("Hay un turno en curso. Si inicias uno nuevo, se perderá el actual. ¿Continuar?")) {
-            localStorage.removeItem("sesion_activa_qc");
+            await localforage.removeItem("sesion_activa_qc");
             location.reload();
         }
     } else {
         location.reload(); 
     }
 }
-function eliminarHistorial(){
+
+async function eliminarHistorial(){
   if(confirm("¿Borrar todo el mes?")){
     const mesClave = `historialQC_${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,"0")}`;
-    localStorage.removeItem(mesClave);
+    await localforage.removeItem(mesClave);
     cargarHistorialMensual();
   }
 }
