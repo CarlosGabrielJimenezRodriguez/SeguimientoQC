@@ -534,10 +534,8 @@ function inicializarSesion(tipo, esExtraStr) {
     guardarProgreso();
 }
 
-// --- BOTONES DE RETROCESO CORREGIDOS ---
 function pausarYVolverInicio() {
     document.getElementById("pantallaChecklist").style.display = "none";
-    // Si la sesión era de curso, el paso anterior fue la pantalla de menú de jornada. Si no, fue la pregunta de tiempo extra.
     if (sesionActual && sesionActual.tipo === "Curso") {
         document.getElementById("pantallaMenu").style.display = "block";
     } else {
@@ -654,8 +652,10 @@ function renderizarChecklistDesdeSesion() {
     renderGaleriaObservaciones();
 }
 
+// --- FUNCIÓN MODIFICADA PARA MOSTRAR LA MATRÍCULA ---
 function agregarPendienteLiberacion(idAvion) {
-    const texto = prompt("Describe el pendiente para el Equipo " + idAvion + ":");
+    const matricula = sesionActual.matriculas[idAvion] ? sesionActual.matriculas[idAvion].toUpperCase() : "Equipo " + idAvion;
+    const texto = prompt("Describe el pendiente para " + matricula + ":");
     if(texto) {
         sesionActual.liberacionItems[idAvion].push(texto);
         renderizarChecklistDesdeSesion();
