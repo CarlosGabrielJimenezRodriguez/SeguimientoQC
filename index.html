@@ -112,7 +112,6 @@
       margin: 0;
   }
 
-  /* Botones pequeños para mover items */
   .btn-move {
       background: #1e293b;
       color: var(--text);
@@ -213,14 +212,21 @@
   .editor-item { display: flex; gap: 8px; margin-bottom: 8px; animation: slideIn 0.2s ease-out; }
   @keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
 
-  /* NUEVOS ESTILOS: VISOR Y MODAL DE EDICIÓN */
+  /* ESTILOS DE VISOR CON ANIMACIÓN PARA EL ZOOM */
   .modal-overlay {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: rgba(0,0,0,0.9); z-index: 1000;
     display: none; justify-content: center; align-items: center;
     backdrop-filter: blur(5px);
   }
-  .modal-img { max-width: 95%; max-height: 90%; border-radius: 8px; box-shadow: 0 0 20px rgba(56, 189, 248, 0.5); }
+  .modal-img { 
+    max-width: 95%; 
+    max-height: 90%; 
+    border-radius: 8px; 
+    box-shadow: 0 0 20px rgba(56, 189, 248, 0.5); 
+    transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94); /* Suaviza el zoom */
+    cursor: zoom-in;
+  }
   .close-modal { position: absolute; top: 20px; right: 20px; color: white; font-size: 30px; cursor: pointer; z-index: 1001; }
 
   .modal-editor-content {
@@ -234,7 +240,7 @@
 
 <div id="visorImg" class="modal-overlay" onclick="cerrarVisor()">
   <span class="close-modal">&times;</span>
-  <img id="imgFull" class="modal-img">
+  <img id="imgFull" class="modal-img" onclick="hacerZoom(event)">
 </div>
 
 <div id="modalEditor" class="modal-overlay">
@@ -387,38 +393,28 @@ const checklistsBase = {
   ]
 };
 
-// Variable base que se llenará con la memoria al cargar
 let misChecklists = checklistsBase;
-
 let fotosAeronaves = { 1: [], 2: [], 3: [], 4: [] };
 let fotosObservaciones = [];
-// Variables para edición
 let indiceEditando = -1;
 let fotosEditando = [];
-
-// VARIABLE PARA LA SESIÓN ACTIVA (Persistencia)
 let sesionActual = null;
 let modoEdicionActivo = false; 
 
-// --- INICIO Y RESTAURACIÓN (MOTOR ASÍNCRONO) ---
+// --- INICIO Y RESTAURACIÓN ---
 window.onload = async function() {
-    // 1. Cargar las listas guardadas desde IndexedDB
     const listasGuardadas = await localforage.getItem("configChecklistsQC");
-    if (listasGuardadas) {
-        misChecklists = listasGuardadas;
-    }
+    if (listasGuardadas) { misChecklists = listasGuardadas; }
     
-    // Validar si falta la de liberación (por actualizaciones previas)
     if (!misChecklists.Liberacion) {
         misChecklists.Liberacion = checklistsBase.Liberacion;
         await localforage.setItem("configChecklistsQC", misChecklists);
     }
 
-    // 2. Revisar si hay una sesión pendiente
     const sesionGuardada = await localforage.getItem("sesion_activa_qc");
     if (sesionGuardada) {
         if(confirm("⚠️ Se detectó un turno sin finalizar. ¿Deseas restaurarlo?")) {
-            sesionActual = sesionGuardada; // Ya es objeto, no requiere JSON.parse
+            sesionActual = sesionGuardada;
             fotosAeronaves = sesionActual.fotosAeronaves || { 1: [], 2: [], 3: [], 4: [] };
             fotosObservaciones = sesionActual.fotosObservaciones || [];
             document.getElementById("pantallaInicio").style.display = "none";
@@ -453,13 +449,10 @@ function renderEditor() {
 function actualizarTarea(tipo, index, valor) { misChecklists[tipo][index] = valor; }
 function eliminarTarea(tipo, index) { misChecklists[tipo].splice(index, 1); renderEditor(); }
 function agregarTarea() { const tipo = document.getElementById("selectTipoConfig").value; misChecklists[tipo].push("Nuevo ítem..."); renderEditor(); }
-
-// Convertido a motor nuevo
 async function guardarConfig() {
     await localforage.setItem("configChecklistsQC", misChecklists);
     alert("✅ Listas actualizadas.");
 }
-
 function volverAlInicioDesdeConfig() {
     document.getElementById("pantallaConfig").style.display = "none";
     document.getElementById("pantallaInicio").style.display = "block";
@@ -513,10 +506,8 @@ function inicializarSesion(tipo, esExtraStr) {
         fotosAeronaves: { 1: [], 2: [], 3: [], 4: [] },
         fotosObservaciones: []
     };
-    
     fotosAeronaves = { 1: [], 2: [], 3: [], 4: [] };
     fotosObservaciones = [];
-
     document.getElementById("pantallaChecklist").style.display = "block";
     renderizarChecklistDesdeSesion();
     guardarProgreso();
@@ -530,13 +521,11 @@ function toggleModoEdicion() {
     
     if (modoEdicionActivo) {
         btn.innerHTML = '<i class="fas fa-check"></i> Terminar Edición';
-        btn.classList.add("btn-success");
-        btn.classList.remove("btn-outline");
+        btn.classList.add("btn-success"); btn.classList.remove("btn-outline");
         zonaAgregar.style.display = "block";
     } else {
         btn.innerHTML = '<i class="fas fa-cog"></i> Configurar';
-        btn.classList.add("btn-outline");
-        btn.classList.remove("btn-success");
+        btn.classList.add("btn-outline"); btn.classList.remove("btn-success");
         zonaAgregar.style.display = "none";
     }
     renderizarChecklistDesdeSesion();
@@ -610,7 +599,6 @@ function renderizarChecklistDesdeSesion() {
     renderGaleriaObservaciones();
 }
 
-// --- LÓGICA DE PERSISTENCIA SEGURA ---
 async function guardarProgreso() {
     if(!sesionActual) return;
     sesionActual.observaciones = document.getElementById("observacionesTurno").value;
@@ -644,34 +632,19 @@ function moverTarea(index, direccion) {
 
 function agregarTareaEnTurno() {
     const texto = prompt("Nombre de la nueva tarea:");
-    if(texto) {
-        sesionActual.tareas.push({ texto: texto, hecho: false, hora: null });
-        renderizarChecklistDesdeSesion();
-        guardarProgreso();
-    }
+    if(texto) { sesionActual.tareas.push({ texto: texto, hecho: false, hora: null }); renderizarChecklistDesdeSesion(); guardarProgreso(); }
 }
-
 function eliminarTareaEnTurno(index) {
-    if(confirm("¿Eliminar esta tarea del turno?")) {
-        sesionActual.tareas.splice(index, 1);
-        renderizarChecklistDesdeSesion();
-        guardarProgreso();
-    }
+    if(confirm("¿Eliminar esta tarea del turno?")) { sesionActual.tareas.splice(index, 1); renderizarChecklistDesdeSesion(); guardarProgreso(); }
 }
-
-function updateMatricula(i, val) {
-    sesionActual.matriculas[i] = val;
-    guardarProgreso();
-}
+function updateMatricula(i, val) { sesionActual.matriculas[i] = val; guardarProgreso(); }
 
 function verificarEstadoLiberacion(idAvion) {
     const totalItems = misChecklists.Liberacion.length;
     const checksDOM = document.querySelectorAll(`.sub-check-${idAvion}`);
     let marcadosIndices = [];
     let count = 0;
-    checksDOM.forEach(chk => {
-        if(chk.checked) { marcadosIndices.push(parseInt(chk.dataset.idx)); count++; }
-    });
+    checksDOM.forEach(chk => { if(chk.checked) { marcadosIndices.push(parseInt(chk.dataset.idx)); count++; } });
     
     sesionActual.liberacionChecks[idAvion] = marcadosIndices;
     const card = document.getElementById(`cardAeronave${idAvion}`);
@@ -679,22 +652,17 @@ function verificarEstadoLiberacion(idAvion) {
 
     if (count === totalItems && totalItems > 0) {
         card.classList.add("liberado-ok");
-        if (!sesionActual.matriculasHoras[idAvion]) {
-             sesionActual.matriculasHoras[idAvion] = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-        }
-        labelEstado.style.opacity = "1";
-        labelEstado.style.color = "var(--success)"; 
-        labelEstado.innerText = "LIBERADO: " + sesionActual.matriculasHoras[idAvion];
+        if (!sesionActual.matriculasHoras[idAvion]) { sesionActual.matriculasHoras[idAvion] = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}); }
+        labelEstado.style.opacity = "1"; labelEstado.style.color = "var(--success)"; labelEstado.innerText = "LIBERADO: " + sesionActual.matriculasHoras[idAvion];
     } else {
         card.classList.remove("liberado-ok");
         sesionActual.matriculasHoras[idAvion] = null;
-        labelEstado.style.opacity = "0.5";
-        labelEstado.style.color = "var(--text)";
-        labelEstado.innerText = "Pendiente (" + count + "/" + totalItems + ")";
+        labelEstado.style.opacity = "0.5"; labelEstado.style.color = "var(--text)"; labelEstado.innerText = "Pendiente (" + count + "/" + totalItems + ")";
     }
     guardarProgreso();
 }
 
+// LÓGICA DE FOTOS OPTIMIZADA (MAYOR RESOLUCIÓN Y CALIDAD)
 function addFoto(i) {
   const fileInput = document.getElementById(`file${i}`);
   const file = fileInput.files[0];
@@ -706,15 +674,14 @@ function addFoto(i) {
     img.onload = function() {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
-        const MAX_WIDTH = 800;
+        const MAX_WIDTH = 1200; // Incrementado para mejor calidad
         const scale = MAX_WIDTH / img.width;
         canvas.width = MAX_WIDTH;
         canvas.height = img.height * scale;
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        fotosAeronaves[i].push(canvas.toDataURL('image/jpeg', 0.7));
+        fotosAeronaves[i].push(canvas.toDataURL('image/jpeg', 0.85)); // Compresión menos agresiva
         renderGaleria(i);
-        guardarProgreso(); 
-        fileInput.value = ""; 
+        guardarProgreso(); fileInput.value = ""; 
     }
   }
   reader.readAsDataURL(file);
@@ -731,15 +698,14 @@ function addFotoObservaciones() {
     img.onload = function() {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
-        const MAX_WIDTH = 800;
+        const MAX_WIDTH = 1200; // Incrementado
         const scale = MAX_WIDTH / img.width;
         canvas.width = MAX_WIDTH;
         canvas.height = img.height * scale;
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        fotosObservaciones.push(canvas.toDataURL('image/jpeg', 0.7));
+        fotosObservaciones.push(canvas.toDataURL('image/jpeg', 0.85)); 
         renderGaleriaObservaciones();
-        guardarProgreso(); 
-        fileInput.value = ""; 
+        guardarProgreso(); fileInput.value = ""; 
     }
   }
   reader.readAsDataURL(file);
@@ -748,25 +714,18 @@ function addFotoObservaciones() {
 function renderGaleriaObservaciones() {
   const galeria = document.getElementById('galeriaObservaciones');
   galeria.innerHTML = fotosObservaciones.map((src, index) => `
-    <div class="img-wrapper"><img src="${src}" class="img-thumb"><button class="btn-remove-img" onclick="removeFotoObservaciones(${index})">×</button></div>
+    <div class="img-wrapper"><img src="${src}" class="img-thumb" onclick="verImagenGrande('${src}')"><button class="btn-remove-img" onclick="removeFotoObservaciones(${index})">×</button></div>
   `).join('');
 }
-function removeFotoObservaciones(index) { 
-    fotosObservaciones.splice(index, 1); 
-    renderGaleriaObservaciones(); 
-    guardarProgreso();
-}
+function removeFotoObservaciones(index) { fotosObservaciones.splice(index, 1); renderGaleriaObservaciones(); guardarProgreso(); }
+
 function renderGaleria(i) {
   const galeria = document.getElementById(`galeria${i}`);
   galeria.innerHTML = fotosAeronaves[i].map((src, index) => `
-    <div class="img-wrapper"><img src="${src}" class="img-thumb"><button class="btn-remove-img" onclick="removeFoto(${i}, ${index})">×</button></div>
+    <div class="img-wrapper"><img src="${src}" class="img-thumb" onclick="verImagenGrande('${src}')"><button class="btn-remove-img" onclick="removeFoto(${i}, ${index})">×</button></div>
   `).join('');
 }
-function removeFoto(i, index) { 
-    fotosAeronaves[i].splice(index, 1); 
-    renderGaleria(i); 
-    guardarProgreso();
-}
+function removeFoto(i, index) { fotosAeronaves[i].splice(index, 1); renderGaleria(i); guardarProgreso(); }
 
 async function validarChecklist() {
   const tipo = sesionActual.tipo;
@@ -801,16 +760,42 @@ async function validarChecklist() {
   await localforage.setItem(mesClave, historial);
   await localforage.removeItem("sesion_activa_qc");
   sesionActual = null;
-  
   alert("✅ Turno Finalizado");
   irAHistorial();
 }
 
-// --- VISOR DE IMAGENES FULL SCREEN ---
+// --- VISOR DE IMÁGENES CON ZOOM INTELIGENTE ---
+let nivelZoom = 1;
+
 function verImagenGrande(src) {
-    document.getElementById("imgFull").src = src;
+    nivelZoom = 1;
+    const img = document.getElementById("imgFull");
+    img.src = src;
+    img.style.transform = `scale(1)`;
+    img.style.cursor = "zoom-in";
     document.getElementById("visorImg").style.display = "flex";
 }
+
+function hacerZoom(event) {
+    event.stopPropagation(); // Evita que se cierre el visor al tocar la imagen
+    const img = document.getElementById("imgFull");
+    
+    if (nivelZoom === 1) {
+        nivelZoom = 2.5; // Zoom In
+        img.style.cursor = "zoom-out";
+        // Calcular dónde se hizo el toque para hacer el zoom centrado ahí
+        const rect = img.getBoundingClientRect();
+        const x = ((event.clientX - rect.left) / rect.width) * 100;
+        const y = ((event.clientY - rect.top) / rect.height) * 100;
+        img.style.transformOrigin = `${x}% ${y}%`;
+    } else {
+        nivelZoom = 1; // Zoom Out
+        img.style.cursor = "zoom-in";
+        img.style.transformOrigin = "center center";
+    }
+    img.style.transform = `scale(${nivelZoom})`;
+}
+
 function cerrarVisor() { document.getElementById("visorImg").style.display = "none"; }
 
 // --- EDICIÓN DE HISTORIAL ---
@@ -822,16 +807,9 @@ async function abrirEditor(indice) {
     indiceEditando = indice;
     document.getElementById("editObservaciones").value = registro.observaciones || "";
     fotosEditando = registro.fotosObservaciones ? [...registro.fotosObservaciones] : [];
-    
-    renderGaleriaEdicion();
-    document.getElementById("modalEditor").style.display = "flex";
+    renderGaleriaEdicion(); document.getElementById("modalEditor").style.display = "flex";
 }
-
-function cerrarEditor() {
-    document.getElementById("modalEditor").style.display = "none";
-    indiceEditando = -1;
-    fotosEditando = [];
-}
+function cerrarEditor() { document.getElementById("modalEditor").style.display = "none"; indiceEditando = -1; fotosEditando = []; }
 
 function renderGaleriaEdicion() {
     const galeria = document.getElementById("editGaleria");
@@ -855,14 +833,13 @@ function addFotoEdicion() {
     img.onload = function() {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
-        const MAX_WIDTH = 800;
+        const MAX_WIDTH = 1200; // Incrementado
         const scale = MAX_WIDTH / img.width;
         canvas.width = MAX_WIDTH;
         canvas.height = img.height * scale;
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        fotosEditando.push(canvas.toDataURL('image/jpeg', 0.7));
-        renderGaleriaEdicion();
-        fileInput.value = ""; 
+        fotosEditando.push(canvas.toDataURL('image/jpeg', 0.85));
+        renderGaleriaEdicion(); fileInput.value = ""; 
     }
   }
   reader.readAsDataURL(file);
@@ -872,14 +849,10 @@ async function guardarEdicion() {
     if(indiceEditando === -1) return;
     const mesClave = `historialQC_${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,"0")}`;
     const historial = await localforage.getItem(mesClave);
-    
     historial[indiceEditando].observaciones = document.getElementById("editObservaciones").value;
     historial[indiceEditando].fotosObservaciones = [...fotosEditando];
-    
     await localforage.setItem(mesClave, historial);
-    alert("✅ Registro actualizado correctamente");
-    cerrarEditor();
-    cargarHistorialMensual(); 
+    alert("✅ Registro actualizado correctamente"); cerrarEditor(); cargarHistorialMensual(); 
 }
 
 // --- HISTORIAL ---
@@ -917,7 +890,7 @@ async function cargarHistorialMensual() {
     </div>`).join("");
 }
 
-// --- EXPORTAR ---
+// --- EXPORTAR PDF (PROPORCIONES CORRECTAS) ---
 async function exportarPDF(){
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
@@ -956,22 +929,41 @@ async function exportarPDF(){
       if(reg.fotosObservaciones && Array.isArray(reg.fotosObservaciones)){
           reg.fotosObservaciones.forEach((f, i) => { allPhotos.push({ src: f, label: `Observación General - Foto ${i+1}` }); });
       }
+      
       if(allPhotos.length > 0) {
           doc.addPage(); 
           doc.setFontSize(14); doc.setTextColor(0, 0, 0);
           doc.text(`Anexo Fotográfico - Fecha: ${reg.fecha}`, 14, 15);
           let yPos = 25;
           const pageHeight = doc.internal.pageSize.height;
+          
           allPhotos.forEach(photo => {
-              const imgHeight = 110; 
-              const imgWidth = 170; 
-              if (yPos + imgHeight > pageHeight - 10) { doc.addPage(); yPos = 20; }
               try {
+                // Leer las propiedades originales de la imagen
+                const props = doc.getImageProperties(photo.src);
+                
+                // Calcular dimensiones proporcionales para no deformar
+                let pdfImgWidth = 170; // Ancho máximo
+                let pdfImgHeight = (props.height * pdfImgWidth) / props.width;
+                
+                // Si la imagen es demasiado alta, la reducimos
+                const maxPdfHeight = 240;
+                if (pdfImgHeight > maxPdfHeight) {
+                    pdfImgHeight = maxPdfHeight;
+                    pdfImgWidth = (props.width * pdfImgHeight) / props.height;
+                }
+
+                if (yPos + pdfImgHeight > pageHeight - 10) { doc.addPage(); yPos = 20; }
+                
+                // Centrar la imagen
+                const xPos = 20 + (170 - pdfImgWidth) / 2;
+
                 doc.text(photo.label, 14, yPos - 2);
-                doc.addImage(photo.src, 'JPEG', 20, yPos, imgWidth, imgHeight);
-                doc.setDrawColor(200); doc.rect(20, yPos, imgWidth, imgHeight);
+                doc.addImage(photo.src, 'JPEG', xPos, yPos, pdfImgWidth, pdfImgHeight);
+                doc.setDrawColor(200); doc.rect(xPos, yPos, pdfImgWidth, pdfImgHeight);
+                
+                yPos += pdfImgHeight + 15;
               } catch(e) { console.error("Error imagen", e); }
-              yPos += imgHeight + 15;
           });
       }
   });
@@ -983,13 +975,11 @@ function filtrarHistorial() {
   const tarjetas = document.querySelectorAll("#listaHistorial > div");
   tarjetas.forEach(t => t.style.display = t.innerText.toLowerCase().includes(busqueda) ? "block" : "none");
 }
-
 async function irAHistorial(){
   document.querySelectorAll("section").forEach(s => s.style.display = "none");
   document.getElementById("pantallaHistorial").style.display = "block";
   await cargarHistorialMensual();
 }
-
 async function eliminarRegistro(i) {
   const mesClave = `historialQC_${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}`;
   let h = await localforage.getItem(mesClave);
@@ -997,7 +987,6 @@ async function eliminarRegistro(i) {
   await localforage.setItem(mesClave, h);
   cargarHistorialMensual();
 }
-
 function volverAlInicio(){ document.getElementById("pantallaMenu").style.display = "none"; document.getElementById("pantallaInicio").style.display = "block"; }
 function volverAJornada(){ document.getElementById("pantallaTiempoExtra").style.display = "none"; document.getElementById("pantallaMenu").style.display = "block"; }
 
@@ -1008,11 +997,8 @@ async function nuevaJornada(){
             await localforage.removeItem("sesion_activa_qc");
             location.reload();
         }
-    } else {
-        location.reload(); 
-    }
+    } else { location.reload(); }
 }
-
 async function eliminarHistorial(){
   if(confirm("¿Borrar todo el mes?")){
     const mesClave = `historialQC_${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,"0")}`;
