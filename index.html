@@ -175,7 +175,6 @@
     border-radius: 4px;
   }
 
-  /* Contenedor del checkbox moderno */
   .modern-check-container {
       display: flex;
       align-items: center;
@@ -186,7 +185,6 @@
       position: relative;
   }
   
-  /* Ocultar el checkbox nativo feo */
   .modern-check-container input {
       position: absolute;
       opacity: 0;
@@ -195,14 +193,13 @@
       width: 0;
   }
 
-  /* El círculo customizado */
   .checkmark {
       position: relative;
       height: 24px;
       width: 24px;
       background-color: transparent;
       border: 2px solid #b0b8c1;
-      border-radius: 50%; /* Lo hace redondo */
+      border-radius: 50%;
       transition: all 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
       flex-shrink: 0;
   }
@@ -212,7 +209,6 @@
       width: 20px;
   }
 
-  /* Estado cuando lo tocas o activas */
   .modern-check-container input:checked ~ .checkmark {
       background-color: var(--neon-green);
       border-color: var(--neon-green);
@@ -220,7 +216,6 @@
       box-shadow: 0 0 8px rgba(0, 210, 106, 0.4);
   }
 
-  /* Dibujar la palomita (oculta por defecto) */
   .checkmark:after {
       content: "";
       position: absolute;
@@ -241,13 +236,11 @@
       height: 9px;
   }
 
-  /* Mostrar la palomita con animación al hacer check */
   .modern-check-container input:checked ~ .checkmark:after {
       display: block;
       animation: checkDraw 0.2s ease-out forwards;
   }
 
-  /* Animación del texto (Tachado suave) */
   .task-text {
       color: var(--text);
       font-size: 14px;
@@ -268,7 +261,7 @@
       font-size: 11px; 
       margin-top: 2px; 
       font-weight: bold; 
-      text-decoration: none !important; /* Que la hora no se tache */
+      text-decoration: none !important;
       display: inline-block;
   }
 
@@ -282,7 +275,6 @@
       100% { opacity: 1; }
   }
 
-  /* Botones pequeños de edición */
   .btn-move { background: var(--bg); color: var(--muted); width: 30px; height: 30px; margin: 0; padding: 0; border: 1px solid var(--border); border-radius: 4px; font-size: 12px; }
   .btn-move:active { background: var(--border); }
   .btn-del-task { background: white; color: var(--danger); width: 30px; height: 30px; margin: 0; padding: 0; border: 1px solid var(--danger); border-radius: 4px; }
@@ -299,13 +291,10 @@
     background: var(--panel) !important;
     border-radius: 6px;
     transition: all 0.4s ease;
-    
-    /* POR DEFECTO: Borde ROJO VIBRANTE (Aún no completado) */
     border: 2px solid var(--neon-red) !important; 
     box-shadow: 0 4px 10px rgba(255, 42, 42, 0.15);
   }
       
-  /* COMPLETADO: Borde VERDE VIBRANTE */
   .check-item-lib.liberado-ok {
     border-color: var(--neon-green) !important; 
     box-shadow: 0 4px 12px rgba(0, 210, 106, 0.2);
@@ -352,17 +341,14 @@
 
   .btn-camera { background: white; color: var(--viva-green); padding: 10px; font-size: 13px; border: 1px dashed var(--viva-green); border-radius: 4px; font-weight: normal;}
 
-  /* ESTADÍSTICAS */
   .stats-container { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
   .stat-card { background: var(--panel); padding: 16px; border-radius: 6px; text-align: center; border: 1px solid var(--border); border-top: 4px solid var(--viva-green); }
   .stat-value { font-size: 1.8rem; font-weight: bold; display: block; color: var(--text); }
   .stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; font-weight: bold; }
 
-  /* Animaciones */
   section { animation: fadeIn 0.2s ease-out; }
   @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-  /* Modales corporativos */
   .modal-overlay {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: rgba(0,0,0,0.8); z-index: 1000;
@@ -570,7 +556,6 @@
 </main>
 
 <script>
-// --- DATOS ---
 const checklistsBase = {
   Diurno: [
     "Checar entrada", "Hacer Clock in", "FORMS FATIGA (overtime)", "Revisar paso de turno",
@@ -610,7 +595,6 @@ let fotosEditando = [];
 let sesionActual = null;
 let modoEdicionActivo = false; 
 
-// --- INICIO Y RESTAURACIÓN ---
 window.onload = async function() {
     const listasGuardadas = await localforage.getItem("configChecklistsQC");
     if (listasGuardadas) { misChecklists = listasGuardadas; }
@@ -624,14 +608,6 @@ window.onload = async function() {
     if (sesionGuardada) {
         if(confirm("⚠️ Tienes un turno en curso. ¿Deseas retomarlo?")) {
             sesionActual = sesionGuardada;
-            
-            if (!sesionActual.liberacionItems) {
-                sesionActual.liberacionItems = {
-                    1: [...misChecklists.Liberacion], 2: [...misChecklists.Liberacion],
-                    3: [...misChecklists.Liberacion], 4: [...misChecklists.Liberacion]
-                };
-            }
-
             fotosAeronaves = sesionActual.fotosAeronaves || { 1: [], 2: [], 3: [], 4: [] };
             fotosObservaciones = sesionActual.fotosObservaciones || [];
             document.getElementById("pantallaInicio").style.display = "none";
@@ -641,15 +617,12 @@ window.onload = async function() {
             await localforage.removeItem("sesion_activa_qc");
         }
     }
-    
     verificarMemoria(); 
 };
 
-// --- SENSOR DE MEMORIA ---
 async function verificarMemoria() {
     try {
         let mostrarAlerta = false;
-        
         const mesClave = `historialQC_${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,"0")}`;
         const historial = await localforage.getItem(mesClave);
         if (historial) {
@@ -660,20 +633,16 @@ async function verificarMemoria() {
             });
             if (totalFotos >= 45) mostrarAlerta = true; 
         }
-
         if (navigator.storage && navigator.storage.estimate) {
             const estimate = await navigator.storage.estimate();
             const porcentaje = (estimate.usage / estimate.quota) * 100;
             if (porcentaje > 85) mostrarAlerta = true;
         }
-
         const banner = document.getElementById("alertaMemoria");
         banner.style.display = mostrarAlerta ? "block" : "none";
-        
-    } catch(e) { console.error("Error al verificar memoria:", e); }
+    } catch(e) { console.error(e); }
 }
 
-// --- CONFIG MAESTRA ---
 function irAConfig() {
     document.getElementById("pantallaInicio").style.display = "none";
     document.getElementById("pantallaConfig").style.display = "block";
@@ -705,7 +674,6 @@ function volverAlInicioDesdeConfig() {
     document.getElementById("pantallaInicio").style.display = "block";
 }
 
-// --- FLUJO ---
 document.getElementById("formInicio").addEventListener("submit", async function(e) {
   e.preventDefault();
   const datos = {
@@ -753,6 +721,7 @@ function inicializarSesion(tipo, esExtraStr) {
         },
         matriculas: { 1: "", 2: "", 3: "", 4: "" },
         matriculasHoras: { 1: null, 2: null, 3: null, 4: null },
+        observacionesAeronaves: { 1: "", 2: "", 3: "", 4: "" },
         observaciones: "",
         fotosAeronaves: { 1: [], 2: [], 3: [], 4: [] },
         fotosObservaciones: []
@@ -782,21 +751,17 @@ function volverInicioDesdeHistorial() {
     }
 }
 
-// --- RENDERIZADO Y MODOS DEL CHECKLIST ---
 function toggleModoEdicion() {
     modoEdicionActivo = !modoEdicionActivo;
     const btn = document.getElementById("btnToggleEdit");
     const zonaAgregar = document.getElementById("zonaAgregar");
-    
     if (modoEdicionActivo) {
         btn.innerHTML = '<i class="fas fa-check"></i> Listo';
-        btn.classList.add("btn-success"); btn.classList.remove("btn-outline");
-        btn.style.color = "white";
+        btn.classList.replace("btn-outline", "btn-success");
         zonaAgregar.style.display = "block";
     } else {
         btn.innerHTML = '<i class="fas fa-pencil-alt"></i> Editar';
-        btn.classList.add("btn-outline"); btn.classList.remove("btn-success");
-        btn.style.color = "white";
+        btn.classList.replace("btn-success", "btn-outline");
         zonaAgregar.style.display = "none";
     }
     renderizarChecklistDesdeSesion();
@@ -812,25 +777,22 @@ function renderizarChecklistDesdeSesion() {
             contenidoItem = `
                 <div style="display:flex; gap:8px; align-items:center; width:100%;">
                     <div style="display:flex; flex-direction:column; gap:4px;">
-                        <button class="btn-move" style="height:22px; font-size:10px;" onclick="moverTarea(${index}, -1)"><i class="fas fa-chevron-up"></i></button>
-                        <button class="btn-move" style="height:22px; font-size:10px;" onclick="moverTarea(${index}, 1)"><i class="fas fa-chevron-down"></i></button>
+                        <button class="btn-move" onclick="moverTarea(${index}, -1)"><i class="fas fa-chevron-up"></i></button>
+                        <button class="btn-move" onclick="moverTarea(${index}, 1)"><i class="fas fa-chevron-down"></i></button>
                     </div>
                     <span style="flex-grow:1; margin-left:5px; font-size:14px;">${itemObj.texto}</span>
-                    <button class="btn-del-task" style="width:36px; height:36px;" onclick="eliminarTareaEnTurno(${index})"><i class="fas fa-trash"></i></button>
+                    <button class="btn-del-task" onclick="eliminarTareaEnTurno(${index})"><i class="fas fa-trash"></i></button>
                 </div>
             `;
         } else {
             const checked = itemObj.hecho ? "checked" : "";
-            const horaText = itemObj.hora ? ` ✔ ${itemObj.hora}` : "";
-            
-            // AQUI ESTA LA MAGIA DEL CHECK ANIMADO: Estructura Label > Input + Span Visual + Text
             contenidoItem = `
                 <label class="modern-check-container">
                     <input type="checkbox" id="item${index}" ${checked} onchange="toggleTarea(${index})">
                     <span class="checkmark"></span>
-                    <span class="task-text">${itemObj.texto} <small id="hora${index}">${horaText}</small></span>
+                    <span class="task-text">${itemObj.texto} <small id="hora${index}">${itemObj.hora ? ' ✔ '+itemObj.hora : ''}</small></span>
                 </label>
-                <button type="button" class="btn-outline" style="margin: 0; padding: 0; width: 34px; height: 34px; border-radius: 4px; border-color: var(--border); color: var(--muted); flex-shrink: 0;" onclick="crearAlarma('${itemObj.texto}')" title="Programar Alarma">
+                <button type="button" class="btn-outline" style="width:34px; height:34px; border-radius:4px;" onclick="crearAlarma('${itemObj.texto}')">
                     <i class="fas fa-bell"></i>
                 </button>
             `;
@@ -839,44 +801,29 @@ function renderizarChecklistDesdeSesion() {
     });
 
     if (sesionActual.tipo !== "Curso") {
-        contenedor.innerHTML += `<h3 style="margin-top: 30px;"><i class="fas fa-shield-alt"></i> Avance de Aeronaves</h3>`;
-        
+        contenedor.innerHTML += `<h3 style="margin-top:30px;"><i class="fas fa-shield-alt"></i> Avance de Aeronaves</h3>`;
         for (let i = 1; i <= 4; i++) {
             let miniItemsHTML = "";
-            const itemsLibDinamicos = sesionActual.liberacionItems[i];
-            
-            itemsLibDinamicos.forEach((subItem, subIndex) => {
-                const isChecked = sesionActual.liberacionChecks[i] && sesionActual.liberacionChecks[i].includes(subIndex) ? "checked" : "";
-                
-                let btnBotonesEdicion = "";
-                if (modoEdicionActivo) {
-                    btnBotonesEdicion = `
-                        <div style="display:flex; gap:4px; margin-left:auto; flex-shrink:0;">
-                            <button class="btn-move" style="width:26px; height:26px;" onclick="moverPendienteLiberacion(${i}, ${subIndex}, -1)"><i class="fas fa-angle-up"></i></button>
-                            <button class="btn-move" style="width:26px; height:26px;" onclick="moverPendienteLiberacion(${i}, ${subIndex}, 1)"><i class="fas fa-angle-down"></i></button>
-                            <button class="btn-outline" style="width:26px; height:26px; padding:0; margin:0;" onclick="editarPendienteLiberacion(${i}, ${subIndex})"><i class="fas fa-pencil-alt"></i></button>
-                            <button class="btn-del-task" style="width:26px; height:26px;" onclick="eliminarPendienteLiberacion(${i}, ${subIndex})"><i class="fas fa-times"></i></button>
-                        </div>
-                    `;
-                }
+            sesionActual.liberacionItems[i].forEach((subItem, subIndex) => {
+                const isChecked = sesionActual.liberacionChecks[i].includes(subIndex) ? "checked" : "";
+                let edicion = modoEdicionActivo ? `
+                    <div style="display:flex; gap:4px; margin-left:auto;">
+                        <button class="btn-move" style="width:26px; height:26px;" onclick="moverPendienteLiberacion(${i}, ${subIndex}, -1)"><i class="fas fa-angle-up"></i></button>
+                        <button class="btn-move" style="width:26px; height:26px;" onclick="moverPendienteLiberacion(${i}, ${subIndex}, 1)"><i class="fas fa-angle-down"></i></button>
+                        <button class="btn-outline" style="width:26px; height:26px; padding:0;" onclick="editarPendienteLiberacion(${i}, ${subIndex})"><i class="fas fa-pencil-alt"></i></button>
+                        <button class="btn-del-task" style="width:26px; height:26px;" onclick="eliminarPendienteLiberacion(${i}, ${subIndex})"><i class="fas fa-times"></i></button>
+                    </div>` : "";
 
                 miniItemsHTML += `
                     <div class="mini-option">
-                        <label class="modern-check-container mini" style="flex-grow:1; margin:0;">
+                        <label class="modern-check-container mini" style="flex-grow:1;">
                             <input type="checkbox" class="sub-check-${i}" data-idx="${subIndex}" ${isChecked} onchange="verificarEstadoLiberacion(${i})">
                             <span class="checkmark"></span>
                             <span class="task-text">${subItem}</span>
                         </label>
-                        ${btnBotonesEdicion}
-                    </div>
-                `;
+                        ${edicion}
+                    </div>`;
             });
-            
-            miniItemsHTML += `
-                <div style="text-align: right; margin-top: 5px;">
-                    <span style="font-size: 12px; color: var(--viva-green); cursor: pointer; font-weight: bold;" onclick="agregarPendienteLiberacion(${i})"><i class="fas fa-plus"></i> Agregar ítem extra</span>
-                </div>
-            `;
 
             const valMat = sesionActual.matriculas[i] || "";
             const estadoTexto = sesionActual.matriculasHoras[i] ? `COMPLETADO: ${sesionActual.matriculasHoras[i]}` : "INSPECCIÓN PENDIENTE";
@@ -886,20 +833,15 @@ function renderizarChecklistDesdeSesion() {
             contenedor.innerHTML += `
             <div class="${claseCard}" id="cardAeronave${i}">
               <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 2px solid var(--border); padding-bottom:8px;">
-                  <input type="text" id="matEquipo${i}" value="${valMat}" placeholder="MATRÍCULA ${i}" oninput="updateMatricula(${i}, this.value)" style="border:none; padding:0; flex-grow:1;">
-                  <span id="tsLib${i}" style="font-size:11px; color:${colorEstado}; font-weight:bold; padding-left:10px; text-align:right;">${estadoTexto}</span>
+                  <input type="text" id="matEquipo${i}" value="${valMat}" placeholder="MATRÍCULA ${i}" oninput="updateMatricula(${i}, this.value)" style="border:none; flex-grow:1;">
+                  <span id="tsLib${i}" style="font-size:11px; color:${colorEstado}; font-weight:bold;">${estadoTexto}</span>
               </div>
-              
               <div class="mini-grid">${miniItemsHTML}</div>
-              
               <div style="margin-top:12px;">
-                  <textarea placeholder="Observaciones específicas del equipo..." rows="2" style="font-size: 13px; padding: 8px; background: transparent;" oninput="updateObsAeronave(${i}, this.value)">${(sesionActual.observacionesAeronaves && sesionActual.observacionesAeronaves[i]) ? sesionActual.observacionesAeronaves[i] : ""}</textarea>
+                  <textarea placeholder="Observaciones específicas del equipo..." rows="2" style="font-size: 13px; padding: 8px; background: transparent;" oninput="updateObsAeronave(${i}, this.value)">${sesionActual.observacionesAeronaves[i] || ""}</textarea>
               </div>
-              
               <div style="margin-top:10px; border-top: 1px dashed var(--border); padding-top:10px;">
-                  <button type="button" class="btn-camera" onclick="document.getElementById('file${i}').click()">
-                    <i class="fas fa-camera"></i> Adjuntar Evidencia Equipo ${i}
-                  </button>
+                  <button type="button" class="btn-camera" onclick="document.getElementById('file${i}').click()"><i class="fas fa-camera"></i> Evidencia</button>
                   <input type="file" id="file${i}" accept="image/*" style="display:none" onchange="addFoto(${i})">
                   <div id="galeria${i}" class="galeria-lib"></div>
               </div>
@@ -911,100 +853,45 @@ function renderizarChecklistDesdeSesion() {
     renderGaleriaObservaciones();
 }
 
-function crearAlarma(nombreTarea) {
-    const minutosStr = prompt("¿En cuántos minutos necesitas que suene la alarma para: " + nombreTarea + "?", "15");
-    if (!minutosStr || isNaN(minutosStr)) return;
-    
-    const minutos = parseInt(minutosStr);
-    const ahora = new Date();
-    const inicio = new Date(ahora.getTime() + minutos * 60000);
-    const fin = new Date(inicio.getTime() + 15 * 60000); 
-
-    const formatICSDate = (date) => {
-        return date.toISOString().replace(/-|:|\.\d+/g, '').substring(0, 15) + 'Z';
-    };
-
-    const icsContent = `BEGIN:VCALENDAR
-VERSION:2.0
-BEGIN:VEVENT
-SUMMARY:QC Pendiente: ${nombreTarea}
-DTSTART:${formatICSDate(inicio)}
-DTEND:${formatICSDate(fin)}
-DESCRIPTION:Recordatorio programado desde Seguimiento QC
-BEGIN:VALARM
-TRIGGER:-PT0M
-ACTION:DISPLAY
-DESCRIPTION:Reminder
-END:VALARM
-END:VEVENT
-END:VCALENDAR`;
-
-    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', 'alarma_qc.ics');
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
+function updateObsAeronave(i, val) { 
+    if(!sesionActual.observacionesAeronaves) sesionActual.observacionesAeronaves = {1:"",2:"",3:"",4:""}; 
+    sesionActual.observacionesAeronaves[i] = val; 
+    guardarProgreso(); 
 }
 
-// --- EDICIÓN DE LIBERACIÓN Y ORDENAMIENTO ---
+function crearAlarma(nombreTarea) {
+    const min = prompt("¿En cuántos minutos para: " + nombreTarea + "?", "15");
+    if (!min || isNaN(min)) return;
+    const ahora = new Date();
+    const inicio = new Date(ahora.getTime() + min * 60000);
+    const fin = new Date(inicio.getTime() + 15 * 60000); 
+    const format = (d) => d.toISOString().replace(/-|:|\.\d+/g, '').substring(0, 15) + 'Z';
+    const ics = `BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nSUMMARY:QC: ${nombreTarea}\nDTSTART:${format(inicio)}\nDTEND:${format(fin)}\nBEGIN:VALARM\nTRIGGER:-PT0M\nACTION:DISPLAY\nEND:VALARM\nEND:VEVENT\nEND:VCALENDAR`;
+    const blob = new Blob([ics], { type: 'text/calendar' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'alarma.ics'; a.click(); URL.revokeObjectURL(url);
+}
+
 function agregarPendienteLiberacion(idAvion) {
-    const matricula = sesionActual.matriculas[idAvion] ? sesionActual.matriculas[idAvion].toUpperCase() : "Equipo " + idAvion;
-    const texto = prompt("Describa el pendiente para " + matricula + ":");
-    if(texto) {
-        sesionActual.liberacionItems[idAvion].push(texto);
-        renderizarChecklistDesdeSesion();
-        verificarEstadoLiberacion(idAvion); 
-        guardarProgreso();
-    }
+    const texto = prompt("Pendiente para equipo " + idAvion + ":");
+    if(texto) { sesionActual.liberacionItems[idAvion].push(texto); renderizarChecklistDesdeSesion(); verificarEstadoLiberacion(idAvion); guardarProgreso(); }
 }
 
 function editarPendienteLiberacion(idAvion, subIndex) {
-    const actual = sesionActual.liberacionItems[idAvion][subIndex];
-    const nuevoTexto = prompt("Edite el ítem de liberación:", actual);
-    if(nuevoTexto !== null && nuevoTexto.trim() !== "") {
-        sesionActual.liberacionItems[idAvion][subIndex] = nuevoTexto.trim();
-        renderizarChecklistDesdeSesion();
-        guardarProgreso();
-    }
+    const nuevo = prompt("Editar:", sesionActual.liberacionItems[idAvion][subIndex]);
+    if(nuevo) { sesionActual.liberacionItems[idAvion][subIndex] = nuevo; renderizarChecklistDesdeSesion(); guardarProgreso(); }
 }
 
 function eliminarPendienteLiberacion(idAvion, subIndex) {
-    if(confirm("¿Eliminar este elemento del equipo?")) {
-        sesionActual.liberacionItems[idAvion].splice(subIndex, 1);
-        sesionActual.liberacionChecks[idAvion] = []; 
-        renderizarChecklistDesdeSesion();
-        verificarEstadoLiberacion(idAvion);
-        guardarProgreso();
-    }
+    if(confirm("¿Eliminar?")) { sesionActual.liberacionItems[idAvion].splice(subIndex, 1); sesionActual.liberacionChecks[idAvion] = []; renderizarChecklistDesdeSesion(); verificarEstadoLiberacion(idAvion); guardarProgreso(); }
 }
 
-function moverPendienteLiberacion(idAvion, index, direccion) {
-    const nuevaPos = index + direccion;
-    const items = sesionActual.liberacionItems[idAvion];
-    
-    if (nuevaPos < 0 || nuevaPos >= items.length) return;
-    
-    const tempTexto = items[index];
-    items[index] = items[nuevaPos];
-    items[nuevaPos] = tempTexto;
-    
-    let checks = sesionActual.liberacionChecks[idAvion] || [];
-    let isCheckedActual = checks.includes(index);
-    let isCheckedNuevo = checks.includes(nuevaPos);
-    
-    checks = checks.filter(idx => idx !== index && idx !== nuevaPos);
-    if (isCheckedActual) checks.push(nuevaPos);
-    if (isCheckedNuevo) checks.push(index);
-    
-    sesionActual.liberacionChecks[idAvion] = checks;
-    
-    renderizarChecklistDesdeSesion();
-    verificarEstadoLiberacion(idAvion);
-    guardarProgreso();
+function moverPendienteLiberacion(idAvion, index, dir) {
+    const n = index + dir; const items = sesionActual.liberacionItems[idAvion];
+    if (n < 0 || n >= items.length) return;
+    [items[index], items[n]] = [items[n], items[index]];
+    renderizarChecklistDesdeSesion(); guardarProgreso();
 }
 
 async function guardarProgreso() {
@@ -1017,151 +904,111 @@ async function guardarProgreso() {
 }
 
 function toggleTarea(index) {
-    const chk = document.getElementById(`item${index}`);
-    sesionActual.tareas[index].hecho = chk.checked;
-    if (chk.checked) {
-        sesionActual.tareas[index].hora = new Date().toLocaleTimeString();
-        document.getElementById(`hora${index}`).innerText = " ✔ " + sesionActual.tareas[index].hora;
-    } else {
-        sesionActual.tareas[index].hora = null;
-        document.getElementById(`hora${index}`).innerText = "";
-    }
-    guardarProgreso();
-}
-
-function moverTarea(index, direccion) {
-    const nuevaPos = index + direccion;
-    if (nuevaPos < 0 || nuevaPos >= sesionActual.tareas.length) return;
-    const temp = sesionActual.tareas[index];
-    sesionActual.tareas[index] = sesionActual.tareas[nuevaPos];
-    sesionActual.tareas[nuevaPos] = temp;
+    sesionActual.tareas[index].hecho = document.getElementById(`item${index}`).checked;
+    sesionActual.tareas[index].hora = sesionActual.tareas[index].hecho ? new Date().toLocaleTimeString() : null;
     renderizarChecklistDesdeSesion();
     guardarProgreso();
 }
 
+function moverTarea(index, dir) {
+    const n = index + dir; if (n < 0 || n >= sesionActual.tareas.length) return;
+    [sesionActual.tareas[index], sesionActual.tareas[n]] = [sesionActual.tareas[n], sesionActual.tareas[index]];
+    renderizarChecklistDesdeSesion(); guardarProgreso();
+}
+
 function agregarTareaEnTurno() {
-    const texto = prompt("Nombre de la nueva tarea:");
-    if(texto) { sesionActual.tareas.push({ texto: texto, hecho: false, hora: null }); renderizarChecklistDesdeSesion(); guardarProgreso(); }
+    const t = prompt("Tarea:"); if(t) { sesionActual.tareas.push({ texto: t, hecho: false, hora: null }); renderizarChecklistDesdeSesion(); guardarProgreso(); }
 }
 function eliminarTareaEnTurno(index) {
-    if(confirm("¿Eliminar esta tarea del turno?")) { sesionActual.tareas.splice(index, 1); renderizarChecklistDesdeSesion(); guardarProgreso(); }
+    if(confirm("¿Eliminar?")) { sesionActual.tareas.splice(index, 1); renderizarChecklistDesdeSesion(); guardarProgreso(); }
 }
 
 function updateMatricula(i, val) { sesionActual.matriculas[i] = val; guardarProgreso(); }
 
-function updateObsAeronave(i, val) { 
-    if(!sesionActual.observacionesAeronaves) sesionActual.observacionesAeronaves = {1:"",2:"",3:"",4:""}; 
-    sesionActual.observacionesAeronaves[i] = val; 
-    guardarProgreso(); 
-}
-
 function verificarEstadoLiberacion(idAvion) {
-    const totalItems = sesionActual.liberacionItems[idAvion].length;
-    const checksDOM = document.querySelectorAll(`.sub-check-${idAvion}`);
-    let marcadosIndices = [];
-    let count = 0;
-    checksDOM.forEach(chk => { if(chk.checked) { marcadosIndices.push(parseInt(chk.dataset.idx)); count++; } });
-    
-    sesionActual.liberacionChecks[idAvion] = marcadosIndices;
-    const card = document.getElementById(`cardAeronave${idAvion}`);
-    const labelEstado = document.getElementById(`tsLib${idAvion}`);
-
-    if (count === totalItems && totalItems > 0) {
-        card.classList.add("liberado-ok");
-        if (!sesionActual.matriculasHoras[idAvion]) { sesionActual.matriculasHoras[idAvion] = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}); }
-        labelEstado.style.color = "var(--success)"; labelEstado.innerText = "COMPLETADO: " + sesionActual.matriculasHoras[idAvion];
-    } else {
-        card.classList.remove("liberado-ok");
-        sesionActual.matriculasHoras[idAvion] = null;
-        labelEstado.style.color = "var(--neon-red)"; labelEstado.innerText = "PENDIENTE (" + count + "/" + totalItems + ")";
-    }
+    const total = sesionActual.liberacionItems[idAvion].length;
+    const checks = document.querySelectorAll(`.sub-check-${idAvion}`);
+    let marcados = []; let count = 0;
+    checks.forEach(chk => { if(chk.checked) { marcados.push(parseInt(chk.dataset.idx)); count++; } });
+    sesionActual.liberacionChecks[idAvion] = marcados;
+    if (count === total && total > 0) {
+        if (!sesionActual.matriculasHoras[idAvion]) sesionActual.matriculasHoras[idAvion] = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    } else { sesionActual.matriculasHoras[idAvion] = null; }
+    renderizarChecklistDesdeSesion();
     guardarProgreso();
 }
 
 function addFoto(i) {
-  const fileInput = document.getElementById(`file${i}`);
-  const file = fileInput.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onloadend = function() {
-    const img = new Image();
-    img.src = reader.result;
-    img.onload = function() {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        const MAX_WIDTH = 800; 
-        const scale = MAX_WIDTH / img.width;
-        canvas.width = MAX_WIDTH;
-        canvas.height = img.height * scale;
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        fotosAeronaves[i].push(canvas.toDataURL('image/jpeg', 0.60)); 
-        renderGaleria(i);
-        guardarProgreso(); fileInput.value = ""; 
+  const f = document.getElementById(`file${i}`).files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onloadend = () => {
+    const img = new Image(); img.src = r.result;
+    img.onload = () => {
+        const c = document.createElement('canvas'); const ctx = c.getContext('2d');
+        c.width = 800; c.height = img.height * (800 / img.width);
+        ctx.drawImage(img, 0, 0, c.width, c.height);
+        fotosAeronaves[i].push(c.toDataURL('image/jpeg', 0.6));
+        renderGaleria(i); guardarProgreso();
     }
   }
-  reader.readAsDataURL(file);
+  r.readAsDataURL(f);
 }
 
 function addFotoObservaciones() {
-  const fileInput = document.getElementById('fileObservaciones');
-  const file = fileInput.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onloadend = function() {
-    const img = new Image();
-    img.src = reader.result;
-    img.onload = function() {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        const MAX_WIDTH = 800; 
-        const scale = MAX_WIDTH / img.width;
-        canvas.width = MAX_WIDTH;
-        canvas.height = img.height * scale;
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        fotosObservaciones.push(canvas.toDataURL('image/jpeg', 0.60)); 
-        renderGaleriaObservaciones();
-        guardarProgreso(); fileInput.value = ""; 
+  const f = document.getElementById('fileObservaciones').files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onloadend = () => {
+    const img = new Image(); img.src = r.result;
+    img.onload = () => {
+        const c = document.createElement('canvas'); const ctx = c.getContext('2d');
+        c.width = 800; c.height = img.height * (800 / img.width);
+        ctx.drawImage(img, 0, 0, c.width, c.height);
+        fotosObservaciones.push(c.toDataURL('image/jpeg', 0.6));
+        renderGaleriaObservaciones(); guardarProgreso();
     }
   }
-  reader.readAsDataURL(file);
+  r.readAsDataURL(f);
 }
 
 function renderGaleriaObservaciones() {
-  const galeria = document.getElementById('galeriaObservaciones');
-  galeria.innerHTML = fotosObservaciones.map((src, index) => `
-    <div class="img-wrapper"><img src="${src}" class="img-thumb" onclick="verImagenGrande(fotosObservaciones[${index}])"><button class="btn-remove-img" onclick="removeFotoObservaciones(${index})"><i class="fas fa-times"></i></button></div>
+  document.getElementById('galeriaObservaciones').innerHTML = fotosObservaciones.map((src, idx) => `
+    <div class="img-wrapper"><img src="${src}" class="img-thumb" onclick="verImagenGrande('${src}')"><button class="btn-remove-img" onclick="removeFotoObs(${idx})">&times;</button></div>
   `).join('');
 }
-function removeFotoObservaciones(index) { fotosObservaciones.splice(index, 1); renderGaleriaObservaciones(); guardarProgreso(); }
+function removeFotoObs(idx) { fotosObservaciones.splice(idx, 1); renderGaleriaObservaciones(); guardarProgreso(); }
 
 function renderGaleria(i) {
-  const galeria = document.getElementById(`galeria${i}`);
-  galeria.innerHTML = fotosAeronaves[i].map((src, index) => `
-    <div class="img-wrapper"><img src="${src}" class="img-thumb" onclick="verImagenGrande(fotosAeronaves[${i}][${index}])"><button class="btn-remove-img" onclick="removeFoto(${i}, ${index})"><i class="fas fa-times"></i></button></div>
+  document.getElementById(`galeria${i}`).innerHTML = fotosAeronaves[i].map((src, idx) => `
+    <div class="img-wrapper"><img src="${src}" class="img-thumb" onclick="verImagenGrande('${src}')"><button class="btn-remove-img" onclick="removeFoto(${i}, ${idx})">&times;</button></div>
   `).join('');
 }
-function removeFoto(i, index) { fotosAeronaves[i].splice(index, 1); renderGaleria(i); guardarProgreso(); }
+function removeFoto(i, idx) { fotosAeronaves[i].splice(idx, 1); renderGaleria(i); guardarProgreso(); }
 
+// --- FUNCIÓN PROTEGIDA: VALIDAR Y GUARDAR ---
 async function validarChecklist() {
+  // REFUERZO DE SEGURIDAD PARA SESIONES LARGAS
+  let colaborador = await localforage.getItem("colaboradorQC");
+  if (!colaborador) {
+      alert("⚠️ Error de sesión por inactividad. Pulsa 'Pausar Turno' y vuelve a entrar para refrescar tus datos.");
+      return;
+  }
+
   const tipo = sesionActual.tipo;
   let matriculasData = [];
   if (tipo !== "Curso") {
     for (let i = 1; i <= 4; i++) {
-      const matInput = document.getElementById(`matEquipo${i}`);
-      const mat = matInput.value.trim();
-      const checksFaltantes = document.querySelectorAll(`.sub-check-${i}:not(:checked)`);
+      const mat = document.getElementById(`matEquipo${i}`).value.trim();
+      const faltan = document.querySelectorAll(`.sub-check-${i}:not(:checked)`);
       if (mat !== "") {
-          if (checksFaltantes.length > 0) { alert(`⚠️ La aeronave ${mat.toUpperCase()} tiene ${checksFaltantes.length} puntos pendientes.`); return; }
-          const obsAero = (sesionActual.observacionesAeronaves && sesionActual.observacionesAeronaves[i]) ? sesionActual.observacionesAeronaves[i] : "";
-          matriculasData.push({ id: mat.toUpperCase(), hora: sesionActual.matriculasHoras[i] || "--:--", fotos: [...fotosAeronaves[i]], observaciones: obsAero });
+          if (faltan.length > 0) { alert(`⚠️ ${mat.toUpperCase()} tiene puntos pendientes.`); return; }
+          const obs = sesionActual.observacionesAeronaves[i] || "";
+          matriculasData.push({ id: mat.toUpperCase(), hora: sesionActual.matriculasHoras[i] || "--:--", fotos: [...fotosAeronaves[i]], observaciones: obs });
       }
     }
   }
   
-  const tareasIncompletas = sesionActual.tareas.some(t => !t.hecho);
-  if (tareasIncompletas) { alert("⚠️ Tareas de jornada incompletas. Verifique la lista."); return; }
+  if (sesionActual.tareas.some(t => !t.hecho)) { alert("⚠️ Checklist incompleto."); return; }
   
-  const colaborador = await localforage.getItem("colaboradorQC");
   const registro = {
     nombre: colaborador.nombre, empleado: colaborador.empleado, fecha: colaborador.fecha,
     jornada: tipo, matriculas: matriculasData, tiempoExtra: sesionActual.esExtra,
@@ -1169,141 +1016,52 @@ async function validarChecklist() {
     fotosObservaciones: [...fotosObservaciones]
   };
   
-  const mesClave = `historialQC_${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,"0")}`;
-  const historial = await localforage.getItem(mesClave) || [];
-  historial.push(registro);
-  
-  await localforage.setItem(mesClave, historial);
+  const mes = `historialQC_${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,"0")}`;
+  const h = await localforage.getItem(mes) || [];
+  h.push(registro);
+  await localforage.setItem(mes, h);
   await localforage.removeItem("sesion_activa_qc");
   sesionActual = null;
-  alert("✅ Turno Finalizado Exitosamente.");
-  
-  verificarMemoria(); 
+  alert("✅ Turno Finalizado.");
   irAHistorial();
 }
 
-let nivelZoom = 1;
-
 function verImagenGrande(src) {
-    nivelZoom = 1;
     const img = document.getElementById("imgFull");
-    img.src = src;
-    img.style.transform = `scale(1)`;
-    img.style.cursor = "zoom-in";
+    img.src = src; img.style.transform = `scale(1)`;
     document.getElementById("visorImg").style.display = "flex";
 }
-
-function hacerZoom(event) {
-    event.stopPropagation(); 
-    const img = document.getElementById("imgFull");
-    
-    if (nivelZoom === 1) {
-        nivelZoom = 2.5; 
-        img.style.cursor = "zoom-out";
-        const rect = img.getBoundingClientRect();
-        const x = ((event.clientX - rect.left) / rect.width) * 100;
-        const y = ((event.clientY - rect.top) / rect.height) * 100;
-        img.style.transformOrigin = `${x}% ${y}%`;
-    } else {
-        nivelZoom = 1; 
-        img.style.cursor = "zoom-in";
-        img.style.transformOrigin = "center center";
-    }
-    img.style.transform = `scale(${nivelZoom})`;
+function hacerZoom(e) {
+    const img = e.target;
+    if (img.style.transform === "scale(2.5)") { img.style.transform = "scale(1)"; } 
+    else { img.style.transform = "scale(2.5)"; }
 }
-
 function cerrarVisor() { document.getElementById("visorImg").style.display = "none"; }
 
-async function abrirEditor(indice) {
-    const mesClave = `historialQC_${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,"0")}`;
-    const historial = await localforage.getItem(mesClave);
-    const registro = historial[indice];
-    
-    indiceEditando = indice;
-    document.getElementById("editObservaciones").value = registro.observaciones || "";
-    fotosEditando = registro.fotosObservaciones ? [...registro.fotosObservaciones] : [];
-    renderGaleriaEdicion(); document.getElementById("modalEditor").style.display = "flex";
-}
-function cerrarEditor() { document.getElementById("modalEditor").style.display = "none"; indiceEditando = -1; fotosEditando = []; }
-
-function renderGaleriaEdicion() {
-    const galeria = document.getElementById("editGaleria");
-    galeria.innerHTML = fotosEditando.map((src, index) => `
-        <div class="img-wrapper">
-            <img src="${src}" class="img-thumb" onclick="verImagenGrande(fotosEditando[${index}])">
-            <button class="btn-remove-img" onclick="eliminarFotoEdicion(${index})"><i class="fas fa-times"></i></button>
-        </div>
-    `).join('');
-}
-function eliminarFotoEdicion(index) { fotosEditando.splice(index, 1); renderGaleriaEdicion(); }
-
-function addFotoEdicion() {
-  const fileInput = document.getElementById('fileEdit');
-  const file = fileInput.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onloadend = function() {
-    const img = new Image();
-    img.src = reader.result;
-    img.onload = function() {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        const MAX_WIDTH = 800; 
-        const scale = MAX_WIDTH / img.width;
-        canvas.width = MAX_WIDTH;
-        canvas.height = img.height * scale;
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        fotosEditando.push(canvas.toDataURL('image/jpeg', 0.60));
-        renderGaleriaEdicion(); fileInput.value = ""; 
-    }
-  }
-  reader.readAsDataURL(file);
-}
-
-async function guardarEdicion() {
-    if(indiceEditando === -1) return;
-    const mesClave = `historialQC_${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,"0")}`;
-    const historial = await localforage.getItem(mesClave);
-    historial[indiceEditando].observaciones = document.getElementById("editObservaciones").value;
-    historial[indiceEditando].fotosObservaciones = [...fotosEditando];
-    await localforage.setItem(mesClave, historial);
-    alert("✅ Registro actualizado correctamente"); cerrarEditor(); 
-    verificarMemoria();
-    cargarHistorialMensual(); 
-}
-
 async function cargarHistorialMensual() {
-  const ahora = new Date();
-  const mesClave = `historialQC_${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, "0")}`;
-  const historial = await localforage.getItem(mesClave) || [];
-  
-  document.getElementById("statJornadas").innerText = historial.length;
-  document.getElementById("statExtra").innerText = historial.filter(r => r.tiempoExtra === "SI").length;
+  const mes = `historialQC_${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,"0")}`;
+  const h = await localforage.getItem(mes) || [];
+  document.getElementById("statJornadas").innerText = h.length;
+  document.getElementById("statExtra").innerText = h.filter(r => r.tiempoExtra === "SI").length;
   const contenedor = document.getElementById("listaHistorial");
   
-  if (historial.length === 0) { contenedor.innerHTML = "<div style='text-align:center; padding:40px 20px; color:var(--muted); background:var(--panel); border-radius:6px; border:1px solid var(--border);'><i class='fas fa-folder-open fa-3x' style='margin-bottom:15px; opacity:0.3;'></i><br>Aún no hay registros en este mes.</div>"; return; }
+  if (h.length === 0) { contenedor.innerHTML = "<div style='text-align:center; padding:20px;'>Sin registros.</div>"; return; }
   
-  contenedor.innerHTML = historial.map((reg, i) => `
-    <div style="padding:16px; margin-bottom:15px; border-radius:6px; background:var(--panel); border: 1px solid var(--border); box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-      <div style="display:flex; justify-content:space-between; margin-bottom:10px; align-items:center; border-bottom:1px solid #f0f0f0; padding-bottom:8px;">
-        <span style="color:var(--text); font-weight:bold; font-size:15px;">${reg.fecha}</span>
-        <span style="color:var(--muted); font-size:12px; font-weight:bold;"><i class="fas fa-clock"></i> Fin: ${reg.horaFin}</span>
+  contenedor.innerHTML = h.map((reg, i) => `
+    <div style="padding:16px; margin-bottom:15px; background:var(--panel); border:1px solid var(--border); border-radius:6px;">
+      <div style="display:flex; justify-content:space-between; border-bottom:1px solid #eee; padding-bottom:5px;">
+        <strong>${reg.fecha}</strong> <small>${reg.horaFin}</small>
       </div>
-      <strong style="font-size:15px; display:block; margin-bottom:10px; color:var(--viva-green);">${reg.jornada} ${reg.matriculas ? ' <span style="color:var(--text);">[' + reg.matriculas.map(m => m.id).join(', ') + ']</span>' : ''}</strong>
-      ${reg.matriculas ? reg.matriculas.map(m => `
-        <div style="margin-top:10px; background:var(--bg); padding:10px; border-radius:4px; border: 1px solid var(--border);">
-          <small style="color:var(--text); font-weight:bold;"><i class="fas fa-plane"></i> ${m.id} (${m.hora})</small>
-          ${m.observaciones ? '<div style="font-size:12px; color:var(--muted); margin-top:4px;"><i>Obs: ' + m.observaciones + '</i></div>' : ''}
-          <div style="display:flex; gap:8px; margin-top:8px; overflow-x:auto;">${m.fotos ? m.fotos.map(f => `<img src="${f}" style="height:40px; width:40px; object-fit:cover; border-radius:4px; cursor:zoom-in; border:1px solid var(--border);" onclick="verImagenGrande('${f}')">`).join('') : ''}</div>
-        </div>`).join('') : ''}
-      <div style="margin-top:15px;">
-          <small style="color:var(--muted); display:block; margin-bottom:4px; font-weight:bold;"><i class="fas fa-comment-alt"></i> Observaciones Generales</small>
-          <p style="font-size:13px; color:var(--text); margin:0; line-height:1.4;">${reg.observaciones || "Ninguna."}</p>
-          ${reg.fotosObservaciones && reg.fotosObservaciones.length > 0 ? `<div style="display:flex; gap:8px; margin-top:10px; overflow-x:auto;">${reg.fotosObservaciones.map(f => `<img src="${f}" style="height:40px; width:40px; object-fit:cover; border-radius:4px; border:1px solid var(--border); cursor:zoom-in;" onclick="verImagenGrande('${f}')">`).join('')}</div>` : ''}
-      </div>
-      <div style="display:flex; gap:10px; margin-top:15px;">
-        <button onclick="abrirEditor(${i})" class="btn-outline" style="border-color:var(--border); color:var(--muted); padding:8px; flex:1; font-weight:bold;"><i class="fas fa-edit"></i> Editar</button>
-        <button onclick="eliminarRegistro(${i})" class="btn-danger" style="padding:8px; flex:1; font-weight:bold;"><i class="fas fa-trash"></i> Borrar</button>
+      <div style="margin:10px 0; color:var(--viva-green); font-weight:bold;">${reg.jornada}</div>
+      ${reg.matriculas.map(m => `
+        <div style="background:#f9f9f9; padding:8px; margin-top:5px; border-radius:4px;">
+            <small><b>${m.id}</b> (${m.hora})</small>
+            ${m.observaciones ? '<div style="font-size:11px; color:#666;">Obs: '+m.observaciones+'</div>' : ''}
+        </div>
+      `).join('')}
+      <p style="font-size:12px; margin-top:10px;">${reg.observaciones}</p>
+      <div style="display:flex; gap:10px; margin-top:10px;">
+        <button onclick="eliminarRegistro(${i})" class="btn-danger" style="padding:5px;">Borrar</button>
       </div>
     </div>`).join("");
 }
@@ -1311,89 +1069,31 @@ async function cargarHistorialMensual() {
 async function exportarPDF(){
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
-  const ahora = new Date();
-  const mesClave = `historialQC_${ahora.getFullYear()}-${String(ahora.getMonth()+1).padStart(2,"0")}`;
-  const h = await localforage.getItem(mesClave) || [];
-  if(h.length === 0){ alert("Aún no hay datos para exportar."); return; }
+  const mes = `historialQC_${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,"0")}`;
+  const h = await localforage.getItem(mes) || [];
+  if(!h.length) return;
 
-  doc.setFontSize(18); doc.setTextColor(17, 92, 53); // Verde Viva
-  doc.text("REPORTE MENSUAL DE CALIDAD (QC)", 14, 20);
+  doc.setFontSize(16); doc.text("REPORTE QC", 14, 20);
   
-  doc.setFontSize(10); doc.setTextColor(100, 100, 100);
-  doc.text(`Generado el: ${ahora.toLocaleDateString()} a las ${ahora.toLocaleTimeString()}`, 14, 26);
-
   const body = h.map(r => [
-    r.fecha + "\n(" + r.horaFin + ")", 
-    r.jornada + (r.matriculas ? "\n\n" + r.matriculas.map(m => "• " + m.id + " (" + m.hora + ")" + (m.observaciones ? "\n  Obs: " + m.observaciones : "")).join("\n\n") : ""), 
-    r.observaciones || "Sin novedades."
+    r.fecha, 
+    r.jornada + "\n" + r.matriculas.map(m => "• " + m.id + (m.observaciones ? " (Obs: " + m.observaciones + ")" : "")).join("\n"), 
+    r.observaciones
   ]);
 
   doc.autoTable({
-    startY: 35,
-    head: [['Fecha y Culminación', 'Equipos Inspeccionados', 'Observaciones Generales']],
+    startY: 30,
+    head: [['Fecha', 'Equipos e Informe', 'Notas']],
     body: body,
-    styles: { fontSize: 9, cellPadding: 4, font: 'helvetica' },
-    headStyles: { fillColor: [17, 92, 53], textColor: [255,255,255], fontStyle: 'bold' },
-    columnStyles: { 0: {cellWidth: 40}, 1: {cellWidth: 60} },
-    alternateRowStyles: { fillColor: [245, 246, 248] }
+    headStyles: { fillColor: [17, 92, 53] }
   });
 
-  h.forEach((reg, index) => {
-      let allPhotos = [];
-      if(reg.matriculas && Array.isArray(reg.matriculas)){
-          reg.matriculas.forEach(m => {
-             if(m.fotos && m.fotos.length > 0) {
-                 m.fotos.forEach((f, i) => { allPhotos.push({ src: f, label: `Evidencia Aeronave: ${m.id} (Foto ${i+1})` }); });
-             }
-          });
-      }
-      if(reg.fotosObservaciones && Array.isArray(reg.fotosObservaciones)){
-          reg.fotosObservaciones.forEach((f, i) => { allPhotos.push({ src: f, label: `Evidencia de Observación General (Foto ${i+1})` }); });
-      }
-      
-      if(allPhotos.length > 0) {
-          doc.addPage(); 
-          doc.setFontSize(14); doc.setTextColor(51, 51, 51);
-          doc.text(`Anexo Fotográfico - Fecha del Turno: ${reg.fecha}`, 14, 15);
-          let yPos = 25;
-          const pageHeight = doc.internal.pageSize.height;
-          
-          allPhotos.forEach(photo => {
-              try {
-                const props = doc.getImageProperties(photo.src);
-                let pdfImgWidth = 170; 
-                let pdfImgHeight = (props.height * pdfImgWidth) / props.width;
-                
-                const maxPdfHeight = 240;
-                if (pdfImgHeight > maxPdfHeight) {
-                    pdfImgHeight = maxPdfHeight;
-                    pdfImgWidth = (props.width * pdfImgHeight) / props.height;
-                }
-
-                if (yPos + pdfImgHeight > pageHeight - 10) { doc.addPage(); yPos = 20; }
-                
-                const xPos = 20 + (170 - pdfImgWidth) / 2;
-
-                doc.setFontSize(10); doc.setTextColor(100,100,100);
-                doc.text(photo.label, 20, yPos - 3);
-                
-                doc.addImage(photo.src, 'JPEG', xPos, yPos, pdfImgWidth, pdfImgHeight);
-                doc.setDrawColor(200); doc.setLineWidth(0.5); doc.rect(xPos, yPos, pdfImgWidth, pdfImgHeight);
-                
-                yPos += pdfImgHeight + 15;
-              } catch(e) { console.error("Error al procesar la imagen para el PDF", e); }
-          });
-      }
-  });
-  doc.save(`Reporte_QC_${mesClave}.pdf`);
-  
-  document.getElementById("alertaMemoria").style.display = "none";
+  doc.save(`Reporte_QC.pdf`);
 }
 
 function filtrarHistorial() {
-  const busqueda = document.getElementById("buscadorHistorial").value.toLowerCase();
-  const tarjetas = document.querySelectorAll("#listaHistorial > div");
-  tarjetas.forEach(t => t.style.display = t.innerText.toLowerCase().includes(busqueda) ? "block" : "none");
+  const b = document.getElementById("buscadorHistorial").value.toLowerCase();
+  document.querySelectorAll("#listaHistorial > div").forEach(t => t.style.display = t.innerText.toLowerCase().includes(b) ? "block" : "none");
 }
 
 async function irAHistorial(){
@@ -1403,38 +1103,16 @@ async function irAHistorial(){
 }
 
 async function eliminarRegistro(i) {
-  if(confirm("¿Confirmar eliminación de este registro operativo?")){
-      const mesClave = `historialQC_${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}`;
-      let h = await localforage.getItem(mesClave);
-      h.splice(i, 1);
-      await localforage.setItem(mesClave, h);
-      cargarHistorialMensual();
-      verificarMemoria();
+  if(confirm("¿Borrar?")){
+      const mes = `historialQC_${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,"0")}`;
+      let h = await localforage.getItem(mes); h.splice(i, 1);
+      await localforage.setItem(mes, h); cargarHistorialMensual();
   }
 }
 
 function volverAlInicio(){ document.getElementById("pantallaMenu").style.display = "none"; document.getElementById("pantallaInicio").style.display = "block"; }
 function volverAJornada(){ document.getElementById("pantallaTiempoExtra").style.display = "none"; document.getElementById("pantallaMenu").style.display = "block"; }
-
-async function nuevaJornada(){ 
-    const sesion = await localforage.getItem("sesion_activa_qc");
-    if(sesion){
-        if(confirm("Tiene un turno activo. Si inicia uno nuevo, perderá los datos no guardados. ¿Continuar?")) {
-            await localforage.removeItem("sesion_activa_qc");
-            location.reload();
-        }
-    } else { location.reload(); }
-}
-
-async function eliminarHistorial(){
-  if(confirm("⚠️ ¿Eliminar todo el historial del mes? Asegúrese de haber generado el PDF de respaldo.")){
-    const mesClave = `historialQC_${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,"0")}`;
-    await localforage.removeItem(mesClave);
-    cargarHistorialMensual();
-    verificarMemoria();
-    alert("✅ Datos mensuales borrados.");
-  }
-}
+function nuevaJornada(){ location.reload(); }
 </script>
 </body>
 </html>
