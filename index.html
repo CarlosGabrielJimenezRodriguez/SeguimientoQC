@@ -12,51 +12,60 @@
 <style>
   :root {
     --bg: #0f172a;
-    --panel: rgba(30, 41, 59, 0.7);
+    --panel: #1e293b;
     --accent: #38bdf8;
+    --accent-hover: #0284c7;
     --text: #f8fafc;
     --muted: #94a3b8;
-    --card: #020617;
+    --card: #0b1120;
     --danger: #ef4444;
-    --success: #22c55e;
+    --success: #10b981;
     --warning: #f59e0b;
+    --border: rgba(255, 255, 255, 0.08);
+  }
+
+  /* Reset y base nativa */
+  * {
+    -webkit-tap-highlight-color: transparent;
+    box-sizing: border-box;
   }
 
   body {
     margin: 0;
-    font-family: "Segoe UI", system-ui, sans-serif;
-    background: radial-gradient(circle at top, #1e293b, #0f172a);
-    background-attachment: fixed;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--bg);
     color: var(--text);
     display: flex;
     justify-content: center;
     min-height: 100vh;
+    overscroll-behavior-y: none; /* Evita el "rebote" al hacer scroll */
   }
 
-  /* NUEVO ESTILO: Alerta de Memoria */
   #alertaMemoria {
     background: rgba(239, 68, 68, 0.95);
     color: white;
-    padding: 12px;
+    padding: 15px;
     text-align: center;
-    font-size: 13px;
-    font-weight: bold;
+    font-size: 14px;
+    font-weight: 600;
     display: none;
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     z-index: 9999;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-    backdrop-filter: blur(5px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
   }
+  
   #alertaMemoria button {
     background: white;
     color: var(--danger);
-    padding: 6px 12px;
-    margin-top: 8px;
-    border-radius: 8px;
-    font-size: 12px;
+    padding: 8px 16px;
+    margin-top: 10px;
+    border-radius: 12px;
+    font-size: 13px;
     border: none;
     cursor: pointer;
     width: auto;
@@ -67,203 +76,268 @@
 
   main {
     width: 100%;
-    max-width: 450px;
-    margin: 40px 15px 15px 15px; /* Margen superior ajustado por si sale la alerta */
-    background: var(--panel);
+    max-width: 500px; /* Simula el ancho de un celular grande en PC */
+    background: var(--bg);
+    padding: 0 20px 40px 20px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Cabeceras Pegajosas (Sticky Headers) */
+  h1 { 
+    text-align: center; 
+    font-size: 22px; 
+    color: var(--text); 
+    margin: 0 -20px 20px -20px; 
+    padding: 25px 20px 15px 20px;
+    position: sticky;
+    top: 0;
+    background: rgba(15, 23, 42, 0.85);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border-radius: 24px;
-    padding: 20px;
-    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
-    border: 1px solid rgba(255,255,255,0.1);
-    position: relative;
+    z-index: 100;
+    border-bottom: 1px solid var(--border);
+    font-weight: 700;
+    letter-spacing: -0.5px;
   }
+  
+  h1 i { color: var(--accent); margin-right: 8px; }
+  h3 { color: var(--text); font-size: 17px; margin-top: 30px; margin-bottom: 15px; font-weight: 600; }
+  h3 i { color: var(--accent); margin-right: 8px; }
 
-  h1 { text-align: center; font-size: 20px; margin-bottom: 20px; color: var(--accent); }
-  h3 { color: var(--accent); font-size: 16px; margin-top: 25px; margin-bottom: 10px; }
+  form { display: grid; gap: 16px; margin-top: 10px; }
+  label { font-size: 14px; color: var(--muted); font-weight: 500; margin-left: 4px; margin-bottom: -10px; }
 
-  form { display: grid; gap: 12px; }
-  label { font-size: 13px; color: var(--muted); font-weight: 600; margin-left: 5px; }
-
+  /* Inputs de aspecto nativo */
   input, textarea, select {
-    background: #020617;
-    border: 1px solid #1e293b;
+    background: var(--card);
+    border: 1px solid var(--border);
     color: var(--text);
-    padding: 12px;
-    border-radius: 12px;
-    font-size: 15px;
+    padding: 16px;
+    border-radius: 16px;
+    font-size: 16px; /* 16px evita el auto-zoom en iOS */
     width: 100%;
-    box-sizing: border-box;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  input:focus, textarea:focus, select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
   }
 
+  /* Botones Modernos */
   button {
-    padding: 14px;
+    padding: 16px;
     border: none;
-    border-radius: 14px;
+    border-radius: 16px;
     background: var(--accent);
     color: #020617;
+    font-size: 16px;
     font-weight: 700;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 10px;
     width: 100%;
     margin-top: 10px;
+    box-shadow: 0 4px 10px rgba(56, 189, 248, 0.2);
   }
 
-  .btn-outline { background: #020617; color: var(--text); border: 1px solid #1e293b; }
-  .btn-danger { background: var(--danger); color: white; }
-  .btn-success { background: var(--success); color: #020617; }
+  button:active { transform: scale(0.97); } /* Efecto de hundimiento */
+
+  .btn-outline { 
+    background: transparent; 
+    color: var(--accent); 
+    border: 1.5px solid var(--accent); 
+    box-shadow: none;
+  }
+  .btn-outline:active { background: rgba(56, 189, 248, 0.1); }
+  
+  .btn-danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1.5px solid var(--danger); box-shadow: none;}
+  .btn-success { background: var(--success); color: white; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2); }
   .btn-warning { background: var(--warning); color: #020617; }
 
-  /* ESTILOS CHECKLIST Y EDICIÓN EN VIVO */
+  /* ESTILOS CHECKLIST (Tipo Tarjetas) */
   #listaChecklist > div {
     display: flex;
     align-items: center;
-    gap: 12px;
-    background: rgba(255, 255, 255, 0.03);
-    margin-bottom: 10px;
-    padding: 12px;
-    border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    gap: 14px;
+    background: var(--panel);
+    margin-bottom: 12px;
+    padding: 16px;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    transition: transform 0.2s;
   }
 
   #listaChecklist input[type="checkbox"] {
-    width: 22px;
-    height: 22px;
+    width: 26px;
+    height: 26px;
     flex-shrink: 0;
     margin: 0;
     accent-color: var(--accent);
+    cursor: pointer;
   }
   
   #listaChecklist label {
       flex-grow: 1;
       cursor: pointer;
       margin: 0;
-  }
-
-  .btn-move {
-      background: #1e293b;
-      color: var(--text);
-      width: 30px;
-      height: 30px;
-      margin: 0;
-      padding: 0;
-      border: 1px solid #334155;
-      border-radius: 8px;
-      font-size: 12px;
+      font-size: 15px;
+      line-height: 1.4;
   }
   
+  #listaChecklist small { display: block; color: var(--accent); font-size: 12px; margin-top: 4px; }
+
+  /* Botones pequeños de edición */
+  .btn-move {
+      background: rgba(255,255,255,0.05);
+      color: var(--muted);
+      width: 36px;
+      height: 36px;
+      margin: 0;
+      padding: 0;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 14px;
+      box-shadow: none;
+  }
+  .btn-move:active { background: var(--accent); color: #000; }
+  
   .btn-del-task {
-      background: rgba(239, 68, 68, 0.2);
+      background: rgba(239, 68, 68, 0.1);
       color: var(--danger);
-      width: 30px;
-      height: 30px;
+      width: 36px;
+      height: 36px;
       margin: 0;
       padding: 0;
       border: 1px solid rgba(239, 68, 68, 0.3);
-      border-radius: 8px;
+      border-radius: 10px;
+      box-shadow: none;
   }
 
-  /* ESTILOS DE LA LIBERACIÓN */
+  /* ESTILOS DE LA LIBERACIÓN (Aeronaves) */
   .check-item-lib {
     display: flex !important;
     flex-direction: column !important;
-    gap: 10px;
-    margin-top: 12px;
-    padding: 15px !important;
-    border: 1px solid #334155 !important;
-    background: rgba(15, 23, 42, 0.6) !important;
-    border-radius: 15px;
-    transition: border-color 0.3s ease, background 0.3s ease;
+    gap: 12px;
+    margin-top: 15px;
+    padding: 20px !important;
+    border: 1px solid var(--border) !important;
+    background: var(--panel) !important;
+    border-radius: 20px;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+    transition: all 0.3s ease;
   }
       
   .check-item-lib.liberado-ok {
     border-color: var(--success) !important;
-    background: rgba(34, 197, 94, 0.1) !important;
+    background: rgba(16, 185, 129, 0.05) !important;
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.1);
   }
 
   .check-item-lib input[type="text"] {
-    border: 1px solid var(--accent);
+    border: none;
+    border-bottom: 2px solid var(--accent);
+    border-radius: 8px 8px 0 0;
     text-align: center;
-    font-weight: bold;
-    letter-spacing: 1px;
+    font-weight: 800;
+    font-size: 18px;
+    letter-spacing: 2px;
     text-transform: uppercase;
+    background: rgba(0,0,0,0.2);
   }
 
   .mini-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
+    grid-template-columns: 1fr; /* Una columna para lectura más clara en móvil */
+    gap: 12px;
     margin-top: 10px;
-    background: rgba(0,0,0,0.2);
-    padding: 10px;
-    border-radius: 10px;
+    background: rgba(0,0,0,0.15);
+    padding: 15px;
+    border-radius: 16px;
   }
 
   .mini-option {
     display: flex;
-    align-items: flex-start;
-    gap: 6px;
-    font-size: 10px;
-    color: #cbd5e1;
-    line-height: 1.2;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+    color: #e2e8f0;
+    line-height: 1.3;
   }
 
   .mini-option input {
-    width: 14px;
-    height: 14px;
+    width: 20px;
+    height: 20px;
     margin: 0;
     cursor: pointer;
+    accent-color: var(--success);
   }
 
   .galeria-lib {
     display: flex;
-    gap: 8px;
+    gap: 12px;
     overflow-x: auto;
-    padding: 5px 0;
+    padding: 10px 0;
     min-height: 20px;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch; /* Scroll suave en iOS */
   }
       
   .img-wrapper { position: relative; flex-shrink: 0; }
-  .img-thumb { width: 60px; height: 60px; object-fit: cover; border-radius: 8px; border: 1px solid var(--accent); cursor: pointer; }
-  .btn-remove-img { position: absolute; top: -5px; right: -5px; background: var(--danger); color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+  .img-thumb { width: 75px; height: 75px; object-fit: cover; border-radius: 12px; border: 2px solid var(--panel); box-shadow: 0 4px 6px rgba(0,0,0,0.3); cursor: zoom-in; }
+  .btn-remove-img { position: absolute; top: -8px; right: -8px; background: var(--danger); color: white; border-radius: 50%; width: 24px; height: 24px; font-size: 12px; border: 2px solid var(--panel); display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: none; }
 
-  .btn-camera { background: #1e293b; color: var(--accent); padding: 10px; font-size: 13px; border: 1px dashed var(--accent); border-radius: 10px; }
+  .btn-camera { background: rgba(56, 189, 248, 0.1); color: var(--accent); padding: 12px; font-size: 14px; border: 1.5px dashed var(--accent); border-radius: 12px; box-shadow: none; }
 
-  .stats-container { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
-  .stat-card { background: rgba(2, 6, 23, 0.5); padding: 15px; border-radius: 15px; text-align: center; border: 1px solid rgba(56, 189, 248, 0.2); }
-  .stat-value { font-size: 1.5rem; font-weight: bold; display: block; color: var(--accent); }
-  .stat-label { font-size: 10px; color: var(--muted); text-transform: uppercase; }
+  /* ESTADÍSTICAS */
+  .stats-container { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
+  .stat-card { background: var(--panel); padding: 20px; border-radius: 20px; text-align: center; border: 1px solid var(--border); box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+  .stat-value { font-size: 2rem; font-weight: 800; display: block; color: var(--accent); }
+  .stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; font-weight: 600; letter-spacing: 1px; }
 
-  section { animation: fadeIn 0.4s ease-in-out; }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  /* Animaciones suaves */
+  section { animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
 
-  .editor-item { display: flex; gap: 8px; margin-bottom: 8px; animation: slideIn 0.2s ease-out; }
-  @keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
-
+  /* Modales */
   .modal-overlay {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.9); z-index: 1000;
+    background: rgba(0,0,0,0.95); z-index: 1000;
     display: none; justify-content: center; align-items: center;
-    backdrop-filter: blur(5px);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
   }
   .modal-img { 
     max-width: 95%; 
     max-height: 90%; 
-    border-radius: 8px; 
-    box-shadow: 0 0 20px rgba(56, 189, 248, 0.5); 
+    border-radius: 16px; 
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
     transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94); 
     cursor: zoom-in;
   }
-  .close-modal { position: absolute; top: 20px; right: 20px; color: white; font-size: 30px; cursor: pointer; z-index: 1001; }
+  .close-modal { position: absolute; top: 25px; right: 25px; color: white; font-size: 35px; cursor: pointer; z-index: 1001; background: rgba(255,255,255,0.1); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
 
   .modal-editor-content {
-    background: #1e293b; padding: 20px; border-radius: 20px;
-    width: 90%; max-width: 400px; border: 1px solid var(--accent);
+    background: var(--bg); padding: 25px; border-radius: 24px;
+    width: 90%; max-width: 400px; border: 1px solid var(--border);
     max-height: 90vh; overflow-y: auto;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+  }
+  
+  /* Botones Fijos Abajo (Menú Inferior simulado) */
+  .action-bottom-bar {
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
   }
 </style>
 </head>
@@ -282,11 +356,11 @@
 
 <div id="modalEditor" class="modal-overlay">
   <div class="modal-editor-content">
-    <h3><i class="fas fa-edit"></i> Editar Registro</h3>
+    <h3 style="margin-top:0;"><i class="fas fa-edit"></i> Editar Registro</h3>
     <label>Observaciones</label>
     <textarea id="editObservaciones" rows="4"></textarea>
     
-    <label style="margin-top:10px;">Fotos (General/Observaciones)</label>
+    <label style="margin-top:15px; display:block;">Fotos (General/Observaciones)</label>
     <div id="editGaleria" class="galeria-lib" style="flex-wrap: wrap;"></div>
     
     <button type="button" class="btn-camera" onclick="document.getElementById('fileEdit').click()" style="margin-top:10px;">
@@ -294,38 +368,50 @@
     </button>
     <input type="file" id="fileEdit" accept="image/*" style="display:none" onchange="addFotoEdicion()">
 
-    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:20px;">
-        <button onclick="guardarEdicion()" class="btn-success"><i class="fas fa-save"></i> Guardar</button>
+    <div class="action-bottom-bar" style="flex-direction: row; border:none; padding-top:10px;">
         <button onclick="cerrarEditor()" class="btn-outline">Cancelar</button>
+        <button onclick="guardarEdicion()" class="btn-success" style="margin-top:0;"><i class="fas fa-save"></i> Guardar</button>
     </div>
   </div>
 </div>
 
 <main>
   <section id="pantallaInicio">
-    <h1><i class="fas fa-clipboard-check"></i> Seguimiento QC</h1>
+    <h1><i class="fas fa-plane-departure"></i> Seguimiento QC</h1>
     <form id="formInicio">
-      <label>Colaborador</label>
-      <input id="nombre" placeholder="Nombre completo" required>
-      <label>No. Empleado</label>
-      <input id="empleado" placeholder="ID" required>
-      <label>Fecha y Entrada</label>
-      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-        <input type="date" id="fecha" required>
-        <input type="time" id="horaEntrada" required>
+      <div>
+        <label>Colaborador</label>
+        <input id="nombre" placeholder="Ingresa tu nombre completo" required>
       </div>
-      <button type="submit" id="btnIniciar"><i class="fas fa-play"></i> Iniciar jornada</button>
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-        <button type="button" onclick="irAHistorial()" class="btn-outline"><i class="fas fa-history"></i> Historial</button>
-        <button type="button" onclick="irAConfig()" class="btn-outline" style="border-color: #475569;"><i class="fas fa-cog"></i> Configurar</button>
+      <div>
+        <label>No. Empleado</label>
+        <input id="empleado" type="number" placeholder="ID Empleado" required>
+      </div>
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+        <div>
+          <label>Fecha</label>
+          <input type="date" id="fecha" required>
+        </div>
+        <div>
+          <label>Entrada</label>
+          <input type="time" id="horaEntrada" required>
+        </div>
+      </div>
+      
+      <div class="action-bottom-bar">
+        <button type="submit" id="btnIniciar"><i class="fas fa-play"></i> Iniciar Jornada</button>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 5px;">
+            <button type="button" onclick="irAHistorial()" class="btn-outline"><i class="fas fa-history"></i> Historial</button>
+            <button type="button" onclick="irAConfig()" class="btn-outline" style="color: var(--muted); border-color: var(--border);"><i class="fas fa-cog"></i> Ajustes</button>
+        </div>
       </div>
     </form>
   </section>
 
   <section id="pantallaConfig" style="display:none;">
-    <h1><i class="fas fa-tasks"></i> Editar Checklists (Maestro)</h1>
-    <label>Seleccionar Lista</label>
-    <select id="selectTipoConfig" onchange="renderEditor()" style="margin-bottom: 15px;">
+    <h1><i class="fas fa-tasks"></i> Maestro de Listas</h1>
+    <label>Seleccionar Lista para Editar</label>
+    <select id="selectTipoConfig" onchange="renderEditor()" style="margin-bottom: 20px;">
         <option value="Diurno">Turno Diurno</option>
         <option value="Nocturno">Turno Nocturno</option>
         <option value="Curso">Capacitación</option>
@@ -333,76 +419,95 @@
         <option value="Liberacion">Items de Liberación (Aeronave)</option>
     </select>
       
-    <div id="editorTareas" style="max-height: 300px; overflow-y: auto; margin-bottom: 15px; padding-right: 5px;"></div>
+    <div id="editorTareas" style="max-height: 400px; overflow-y: auto; margin-bottom: 20px; padding-right: 5px;"></div>
       
-    <button onclick="agregarTarea()" class="btn-outline"><i class="fas fa-plus"></i> Añadir Item</button>
-    <button onclick="guardarConfig()" class="btn-success"><i class="fas fa-save"></i> Guardar Cambios</button>
-    <button onclick="volverAlInicioDesdeConfig()" class="btn-outline"><i class="fas fa-arrow-left"></i> Regresar</button>
+    <button onclick="agregarTarea()" class="btn-outline"><i class="fas fa-plus"></i> Añadir Nuevo Ítem</button>
+    
+    <div class="action-bottom-bar">
+        <button onclick="guardarConfig()" class="btn-success"><i class="fas fa-save"></i> Guardar Cambios</button>
+        <button onclick="volverAlInicioDesdeConfig()" class="btn-outline" style="border:none; color: var(--muted);"><i class="fas fa-arrow-left"></i> Volver al Inicio</button>
+    </div>
   </section>
 
   <section id="pantallaMenu" style="display:none;">
-    <h1>Tipo de jornada</h1>
-    <div class="menu-opciones">
-      <button onclick="seleccionarJornada('Diurno')" class="btn-outline"><i class="fas fa-sun"></i> Turno Diurno</button>
-      <button onclick="seleccionarJornada('Nocturno')" class="btn-outline"><i class="fas fa-moon"></i> Turno Nocturno</button>
-      <button onclick="seleccionarJornada('Curso')" class="btn-outline"><i class="fas fa-graduation-cap"></i> Capacitación</button>
+    <h1>Tipo de Jornada</h1>
+    <div style="display: flex; flex-direction: column; gap: 16px; margin-top: 20px;">
+      <button onclick="seleccionarJornada('Diurno')" style="padding: 24px; font-size:18px;"><i class="fas fa-sun fa-lg"></i> Turno Diurno</button>
+      <button onclick="seleccionarJornada('Nocturno')" style="padding: 24px; font-size:18px; background: #1e1b4b; color: #a5b4fc;"><i class="fas fa-moon fa-lg"></i> Turno Nocturno</button>
+      <button onclick="seleccionarJornada('Curso')" style="padding: 24px; font-size:18px; background: var(--panel); color: var(--text); border: 1px solid var(--border); box-shadow:none;"><i class="fas fa-graduation-cap fa-lg"></i> Capacitación</button>
     </div>
-    <button onclick="volverAlInicio()" class="btn-outline"><i class="fas fa-arrow-left"></i> Regresar</button>
+    
+    <div class="action-bottom-bar">
+        <button onclick="volverAlInicio()" class="btn-outline" style="border:none; color: var(--muted);"><i class="fas fa-arrow-left"></i> Cancelar</button>
+    </div>
   </section>
 
   <section id="pantallaTiempoExtra" style="display:none;">
-    <h1>¿Es tiempo extra?</h1>
-    <button onclick="seleccionarTiempoExtra(true)"><i class="fas fa-check"></i> Sí, es extra</button>
-    <button onclick="seleccionarTiempoExtra(false)" class="btn-outline"><i class="fas fa-times"></i> No</button>
-    <button onclick="volverAJornada()" class="btn-outline"><i class="fas fa-arrow-left"></i> Regresar</button>
+    <h1 style="text-align:center; border:none; background:transparent;"><i class="fas fa-clock fa-2x" style="display:block; margin-bottom:15px; color:var(--warning);"></i> ¿Incluye Tiempo Extra?</h1>
+    
+    <div style="display: flex; gap: 15px; margin-top:30px;">
+        <button onclick="seleccionarTiempoExtra(false)" class="btn-outline" style="padding: 20px;"><i class="fas fa-times"></i> NO</button>
+        <button onclick="seleccionarTiempoExtra(true)" style="padding: 20px;"><i class="fas fa-check"></i> SÍ</button>
+    </div>
+    
+    <div class="action-bottom-bar">
+        <button onclick="volverAJornada()" class="btn-outline" style="border:none; color: var(--muted);"><i class="fas fa-arrow-left"></i> Regresar</button>
+    </div>
   </section>
 
   <section id="pantallaChecklist" style="display:none;">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-        <h1 style="margin:0;">Checklist Activo</h1>
-        <button id="btnToggleEdit" onclick="toggleModoEdicion()" class="btn-outline" style="width:auto; height:auto; padding:8px; margin:0; font-size:12px;">
-            <i class="fas fa-cog"></i> Configurar
+    <div style="position: sticky; top: 0; background: var(--bg); z-index: 100; margin: 0 -20px; padding: 15px 20px; border-bottom: 1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+        <h1 style="margin:0; padding:0; border:none; background:transparent; font-size: 18px;">Checklist Activo</h1>
+        <button id="btnToggleEdit" onclick="toggleModoEdicion()" class="btn-outline" style="width:auto; margin:0; padding:8px 16px; font-size:13px; border-radius: 20px; box-shadow:none;">
+            <i class="fas fa-pencil-alt"></i> Editar Tareas
         </button>
     </div>
     
-    <div id="listaChecklist"></div>
+    <div id="listaChecklist" style="margin-top: 20px;"></div>
     
     <div id="zonaAgregar" style="display:none;">
-        <button onclick="agregarTareaEnTurno()" class="btn-outline" style="margin-bottom:15px; border-style:dashed; opacity:0.8;"><i class="fas fa-plus"></i> Nueva Tarea</button>
+        <button onclick="agregarTareaEnTurno()" class="btn-outline" style="margin-bottom:20px; border-style:dashed; opacity:0.8;"><i class="fas fa-plus"></i> Añadir tarea temporal</button>
     </div>
 
-    <label style="margin-top:20px; display:block;">Observaciones Generales</label>
-    <textarea id="observacionesTurno" placeholder="Notas adicionales..." oninput="guardarProgreso()"></textarea>
-      
-    <button type="button" class="btn-camera" onclick="document.getElementById('fileObservaciones').click()" style="margin-top:10px;">
-        <i class="fas fa-camera"></i> Añadir Foto a Observaciones
-    </button>
-    <input type="file" id="fileObservaciones" accept="image/*" style="display:none" onchange="addFotoObservaciones()">
-    <div id="galeriaObservaciones" class="galeria-lib" style="margin-bottom:15px; margin-top:10px;"></div>
+    <div style="background: var(--panel); border-radius: 20px; padding: 20px; margin-top: 25px; border: 1px solid var(--border);">
+        <label style="display:block; margin-bottom: 10px; color: var(--text); font-size: 16px;"><i class="fas fa-clipboard"></i> Notas Generales del Turno</label>
+        <textarea id="observacionesTurno" placeholder="Escribe aquí observaciones, novedades o pendientes relevantes..." rows="4" style="background: rgba(0,0,0,0.2); border: none;" oninput="guardarProgreso()"></textarea>
+          
+        <button type="button" class="btn-camera" onclick="document.getElementById('fileObservaciones').click()" style="margin-top:15px; background: rgba(255,255,255,0.05); color: var(--text); border-color: var(--muted);">
+            <i class="fas fa-camera"></i> Adjuntar Evidencia (General)
+        </button>
+        <input type="file" id="fileObservaciones" accept="image/*" style="display:none" onchange="addFotoObservaciones()">
+        <div id="galeriaObservaciones" class="galeria-lib" style="margin-top:15px;"></div>
+    </div>
     
-    <button onclick="validarChecklist()"><i class="fas fa-save"></i> Finalizar Turno</button>
-    
-    <button onclick="pausarYVolverInicio()" class="btn-outline" style="margin-top: 15px; border-color: #475569;">
-        <i class="fas fa-arrow-left"></i> Regresar al paso anterior
-    </button>
-    
+    <div class="action-bottom-bar" style="margin-top: 40px;">
+        <button onclick="validarChecklist()" class="btn-success" style="padding: 20px; font-size: 18px;"><i class="fas fa-flag-checkered"></i> Finalizar Turno</button>
+        <button onclick="pausarYVolverInicio()" class="btn-outline" style="border:none; color: var(--danger);"><i class="fas fa-pause-circle"></i> Pausar y Salir</button>
+    </div>
   </section>
 
   <section id="pantallaHistorial" style="display:none;">
-    <h1>Resumen Mensual</h1>
-    <input type="text" id="buscadorHistorial" onkeyup="filtrarHistorial()" placeholder="🔍 Buscar matrícula..." style="margin-bottom: 15px;">
-    <div class="stats-container">
-      <div class="stat-card"><i class="fas fa-calendar-alt"></i><span id="statJornadas" class="stat-value">0</span><span class="stat-label">Jornadas</span></div>
-      <div class="stat-card"><i class="fas fa-star"></i><span id="statExtra" class="stat-value">0</span><span class="stat-label">T. Extra</span></div>
-    </div>
-    <div id="listaHistorial"></div>
-    <button onclick="nuevaJornada()"><i class="fas fa-redo"></i> Nueva jornada</button>
-    <button onclick="exportarPDF()" class="btn-success"><i class="fas fa-file-pdf"></i> PDF</button>
-    <button onclick="eliminarHistorial()" class="btn-danger"><i class="fas fa-trash-alt"></i> Borrar Mes</button>
+    <h1><i class="fas fa-folder-open"></i> Resumen Mensual</h1>
     
-    <button onclick="volverInicioDesdeHistorial()" class="btn-outline" style="margin-top: 15px; border-color: #475569;">
-        <i class="fas fa-arrow-left"></i> Regresar
-    </button>
+    <div style="position: sticky; top: 70px; background: var(--bg); z-index: 90; margin: 0 -20px; padding: 10px 20px;">
+        <input type="text" id="buscadorHistorial" onkeyup="filtrarHistorial()" placeholder="🔍 Buscar por matrícula, fecha..." style="background: var(--panel); border-color: var(--border);">
+    </div>
+
+    <div class="stats-container" style="margin-top: 20px;">
+      <div class="stat-card"><i class="fas fa-calendar-check" style="color:var(--muted); margin-bottom:5px; font-size:20px;"></i><span id="statJornadas" class="stat-value">0</span><span class="stat-label">Turnos</span></div>
+      <div class="stat-card"><i class="fas fa-star" style="color:var(--warning); margin-bottom:5px; font-size:20px;"></i><span id="statExtra" class="stat-value">0</span><span class="stat-label">Extras</span></div>
+    </div>
+    
+    <div id="listaHistorial"></div>
+    
+    <div class="action-bottom-bar">
+        <button onclick="exportarPDF()" class="btn-success"><i class="fas fa-file-pdf"></i> Generar Reporte PDF</button>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <button onclick="nuevaJornada()" class="btn-outline" style="color: var(--text); border-color: var(--border);"><i class="fas fa-plus"></i> Nuevo Turno</button>
+            <button onclick="eliminarHistorial()" class="btn-danger"><i class="fas fa-trash-alt"></i> Limpiar Mes</button>
+        </div>
+        <button onclick="volverInicioDesdeHistorial()" class="btn-outline" style="border:none; color: var(--muted); margin-top:10px;"><i class="fas fa-arrow-left"></i> Volver al Menú</button>
+    </div>
   </section>
 </main>
 
@@ -459,7 +564,7 @@ window.onload = async function() {
 
     const sesionGuardada = await localforage.getItem("sesion_activa_qc");
     if (sesionGuardada) {
-        if(confirm("⚠️ Se detectó un turno sin finalizar. ¿Deseas restaurarlo?")) {
+        if(confirm("⚠️ Tienes un turno en curso. ¿Deseas retomarlo?")) {
             sesionActual = sesionGuardada;
             
             if (!sesionActual.liberacionItems) {
@@ -479,7 +584,7 @@ window.onload = async function() {
         }
     }
     
-    verificarMemoria(); // Chequeo inicial de memoria
+    verificarMemoria(); 
 };
 
 // --- SENSOR DE MEMORIA ---
@@ -487,7 +592,6 @@ async function verificarMemoria() {
     try {
         let mostrarAlerta = false;
         
-        // 1. Validar tamaño del historial (prevención de Crash al generar PDF)
         const mesClave = `historialQC_${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,"0")}`;
         const historial = await localforage.getItem(mesClave);
         if (historial) {
@@ -496,11 +600,9 @@ async function verificarMemoria() {
                 if (h.fotosObservaciones) totalFotos += h.fotosObservaciones.length;
                 if (h.matriculas) h.matriculas.forEach(m => totalFotos += (m.fotos ? m.fotos.length : 0));
             });
-            // Si hay más de 45 fotos almacenadas en el mes, el PDF podría ser muy pesado
             if (totalFotos >= 45) mostrarAlerta = true; 
         }
 
-        // 2. Validar cuota nativa del navegador (si está disponible)
         if (navigator.storage && navigator.storage.estimate) {
             const estimate = await navigator.storage.estimate();
             const porcentaje = (estimate.usage / estimate.quota) * 100;
@@ -526,9 +628,9 @@ function renderEditor() {
     contenedor.innerHTML = "";
     misChecklists[tipo].forEach((tarea, index) => {
         contenedor.innerHTML += `
-            <div class="editor-item">
-                <input type="text" value="${tarea}" onchange="actualizarTarea('${tipo}', ${index}, this.value)">
-                <button onclick="eliminarTarea('${tipo}', ${index})" style="width:45px; background:var(--danger); margin:0; padding:0;"><i class="fas fa-trash"></i></button>
+            <div class="editor-item" style="display:flex; gap:8px; margin-bottom:10px;">
+                <input type="text" value="${tarea}" onchange="actualizarTarea('${tipo}', ${index}, this.value)" style="margin:0; padding:12px;">
+                <button onclick="eliminarTarea('${tipo}', ${index})" class="btn-del-task" style="width:45px; height:auto; margin:0;"><i class="fas fa-trash"></i></button>
             </div>
         `;
     });
@@ -538,7 +640,7 @@ function eliminarTarea(tipo, index) { misChecklists[tipo].splice(index, 1); rend
 function agregarTarea() { const tipo = document.getElementById("selectTipoConfig").value; misChecklists[tipo].push("Nuevo ítem..."); renderEditor(); }
 async function guardarConfig() {
     await localforage.setItem("configChecklistsQC", misChecklists);
-    alert("✅ Listas actualizadas.");
+    alert("✅ Listas maestras actualizadas.");
 }
 function volverAlInicioDesdeConfig() {
     document.getElementById("pantallaConfig").style.display = "none";
@@ -629,11 +731,11 @@ function toggleModoEdicion() {
     const zonaAgregar = document.getElementById("zonaAgregar");
     
     if (modoEdicionActivo) {
-        btn.innerHTML = '<i class="fas fa-check"></i> Terminar Edición';
+        btn.innerHTML = '<i class="fas fa-check"></i> Listo';
         btn.classList.add("btn-success"); btn.classList.remove("btn-outline");
         zonaAgregar.style.display = "block";
     } else {
-        btn.innerHTML = '<i class="fas fa-cog"></i> Configurar';
+        btn.innerHTML = '<i class="fas fa-pencil-alt"></i> Editar';
         btn.classList.add("btn-outline"); btn.classList.remove("btn-success");
         zonaAgregar.style.display = "none";
     }
@@ -648,12 +750,14 @@ function renderizarChecklistDesdeSesion() {
         let contenidoItem = "";
         if (modoEdicionActivo) {
             contenidoItem = `
-                <div style="display:flex; gap:5px;">
-                    <button class="btn-move" onclick="moverTarea(${index}, -1)">⬆</button>
-                    <button class="btn-move" onclick="moverTarea(${index}, 1)">⬇</button>
+                <div style="display:flex; gap:5px; align-items:center; width:100%;">
+                    <div style="display:flex; flex-direction:column; gap:2px;">
+                        <button class="btn-move" style="height:20px; font-size:10px;" onclick="moverTarea(${index}, -1)"><i class="fas fa-chevron-up"></i></button>
+                        <button class="btn-move" style="height:20px; font-size:10px;" onclick="moverTarea(${index}, 1)"><i class="fas fa-chevron-down"></i></button>
+                    </div>
+                    <span style="flex-grow:1; margin-left:10px; font-size:14px;">${itemObj.texto}</span>
+                    <button class="btn-del-task" style="width:40px; height:40px;" onclick="eliminarTareaEnTurno(${index})"><i class="fas fa-trash"></i></button>
                 </div>
-                <span style="flex-grow:1; margin-left:10px;">${itemObj.texto}</span>
-                <button class="btn-del-task" onclick="eliminarTareaEnTurno(${index})"><i class="fas fa-trash"></i></button>
             `;
         } else {
             const checked = itemObj.hecho ? "checked" : "";
@@ -661,7 +765,7 @@ function renderizarChecklistDesdeSesion() {
             contenidoItem = `
                 <input type="checkbox" id="item${index}" ${checked} onchange="toggleTarea(${index})">
                 <label for="item${index}">${itemObj.texto} <small id="hora${index}">${horaText}</small></label>
-                <button type="button" class="btn-outline" style="margin: 0; padding: 6px 10px; width: auto; font-size: 12px; border-color: #334155; border-radius: 8px; flex-shrink: 0;" onclick="crearAlarma('${itemObj.texto}')" title="Programar Alarma">
+                <button type="button" class="btn-outline" style="margin: 0; padding: 0; width: 40px; height: 40px; border-radius: 12px; border-color: var(--border); color: var(--text); flex-shrink: 0;" onclick="crearAlarma('${itemObj.texto}')" title="Programar Alarma">
                     <i class="fas fa-bell"></i>
                 </button>
             `;
@@ -670,7 +774,7 @@ function renderizarChecklistDesdeSesion() {
     });
 
     if (sesionActual.tipo !== "Curso") {
-        contenedor.innerHTML += `<h3><i class="fas fa-shield-alt"></i> Liberación de Aeronaves</h3>`;
+        contenedor.innerHTML += `<h3 style="margin-top: 35px;"><i class="fas fa-shield-check"></i> Avance de Aeronaves</h3>`;
         
         for (let i = 1; i <= 4; i++) {
             let miniItemsHTML = "";
@@ -682,45 +786,50 @@ function renderizarChecklistDesdeSesion() {
                 let btnBotonesEdicion = "";
                 if (modoEdicionActivo) {
                     btnBotonesEdicion = `
-                        <button class="btn-move" style="width:20px; height:20px; font-size:10px; margin-left:auto; padding:0; flex-shrink:0;" onclick="moverPendienteLiberacion(${i}, ${subIndex}, -1)">⬆</button>
-                        <button class="btn-move" style="width:20px; height:20px; font-size:10px; margin-left:2px; padding:0; flex-shrink:0;" onclick="moverPendienteLiberacion(${i}, ${subIndex}, 1)">⬇</button>
-                        <button class="btn-outline" style="width:20px; height:20px; font-size:10px; margin-left:2px; padding:0; flex-shrink:0; border-color:#38bdf8; color:#38bdf8;" onclick="editarPendienteLiberacion(${i}, ${subIndex})"><i class="fas fa-pencil-alt"></i></button>
-                        <button class="btn-del-task" style="width:20px; height:20px; font-size:10px; margin-left:2px; padding:0; flex-shrink:0;" onclick="eliminarPendienteLiberacion(${i}, ${subIndex})"><i class="fas fa-times"></i></button>
+                        <div style="display:flex; gap:4px; margin-left:auto; flex-shrink:0;">
+                            <button class="btn-move" style="width:28px; height:28px;" onclick="moverPendienteLiberacion(${i}, ${subIndex}, -1)"><i class="fas fa-angle-up"></i></button>
+                            <button class="btn-move" style="width:28px; height:28px;" onclick="moverPendienteLiberacion(${i}, ${subIndex}, 1)"><i class="fas fa-angle-down"></i></button>
+                            <button class="btn-outline" style="width:28px; height:28px; border-color:var(--accent); color:var(--accent); padding:0; margin:0;" onclick="editarPendienteLiberacion(${i}, ${subIndex})"><i class="fas fa-pencil-alt"></i></button>
+                            <button class="btn-del-task" style="width:28px; height:28px;" onclick="eliminarPendienteLiberacion(${i}, ${subIndex})"><i class="fas fa-times"></i></button>
+                        </div>
                     `;
                 }
 
                 miniItemsHTML += `
-                    <div class="mini-option" style="align-items:center;">
-                        <input type="checkbox" class="sub-check-${i}" data-idx="${subIndex}" ${isChecked} onchange="verificarEstadoLiberacion(${i})">
-                        <span style="flex-grow:1;">${subItem}</span>
+                    <div class="mini-option" style="padding: 4px 0;">
+                        <input type="checkbox" class="sub-check-${i}" data-idx="${subIndex}" ${isChecked} onchange="verificarEstadoLiberacion(${i})" style="width:22px; height:22px;">
+                        <span style="flex-grow:1; font-size:14px;">${subItem}</span>
                         ${btnBotonesEdicion}
                     </div>
                 `;
             });
             
             miniItemsHTML += `
-                <div style="grid-column: 1 / -1; text-align: right; margin-top: 5px;">
-                    <span style="font-size: 11px; color: var(--accent); cursor: pointer; font-weight: bold; background: rgba(56,189,248,0.1); padding: 4px 8px; border-radius: 6px;" onclick="agregarPendienteLiberacion(${i})"><i class="fas fa-plus"></i> Añadir pendiente extra</span>
+                <div style="text-align: right; margin-top: 10px; border-top: 1px solid var(--border); padding-top: 10px;">
+                    <span style="font-size: 13px; color: var(--accent); cursor: pointer; font-weight: 600;" onclick="agregarPendienteLiberacion(${i})"><i class="fas fa-plus-circle"></i> Agregar inspección extra</span>
                 </div>
             `;
 
             const valMat = sesionActual.matriculas[i] || "";
-            const estadoTexto = sesionActual.matriculasHoras[i] ? `LIBERADO: ${sesionActual.matriculasHoras[i]}` : "Pendiente de liberar";
-            const colorEstado = sesionActual.matriculasHoras[i] ? "var(--success)" : "var(--text)";
-            const opacityEstado = sesionActual.matriculasHoras[i] ? "1" : "0.5";
+            const estadoTexto = sesionActual.matriculasHoras[i] ? `¡LISTO! ${sesionActual.matriculasHoras[i]}` : "Inspección en curso...";
+            const colorEstado = sesionActual.matriculasHoras[i] ? "var(--success)" : "var(--muted)";
+            const opacityEstado = sesionActual.matriculasHoras[i] ? "1" : "0.7";
             const claseCard = sesionActual.matriculasHoras[i] ? "check-item-lib liberado-ok" : "check-item-lib";
 
             contenedor.innerHTML += `
             <div class="${claseCard}" id="cardAeronave${i}">
               <input type="text" id="matEquipo${i}" value="${valMat}" placeholder="MATRÍCULA EQUIPO ${i}" oninput="updateMatricula(${i}, this.value)">
-              <button type="button" class="btn-camera" onclick="document.getElementById('file${i}').click()">
-                <i class="fas fa-camera"></i> Añadir Foto / Galería
+              
+              <div class="mini-grid">${miniItemsHTML}</div>
+              
+              <button type="button" class="btn-camera" onclick="document.getElementById('file${i}').click()" style="margin-top:5px;">
+                <i class="fas fa-camera"></i> Adjuntar Evidencia Equipo ${i}
               </button>
               <input type="file" id="file${i}" accept="image/*" style="display:none" onchange="addFoto(${i})">
               <div id="galeria${i}" class="galeria-lib"></div>
-              <div class="mini-grid">${miniItemsHTML}</div>
+              
               <div style="text-align:center; margin-top:5px;">
-                <small id="tsLib${i}" style="font-size:12px; color:${colorEstado}; font-weight:bold; opacity:${opacityEstado};">${estadoTexto}</small>
+                <span id="tsLib${i}" style="font-size:13px; color:${colorEstado}; font-weight:800; opacity:${opacityEstado}; letter-spacing:1px;">${estadoTexto}</span>
               </div>
             </div>`;
             setTimeout(() => renderGaleria(i), 0);
@@ -730,7 +839,6 @@ function renderizarChecklistDesdeSesion() {
     renderGaleriaObservaciones();
 }
 
-// --- NUEVA FUNCIÓN DE ALARMA POR CALENDARIO ---
 function crearAlarma(nombreTarea) {
     const minutosStr = prompt("¿En cuántos minutos necesitas que suene la alarma para: " + nombreTarea + "?", "15");
     if (!minutosStr || isNaN(minutosStr)) return;
@@ -795,11 +903,10 @@ function editarPendienteLiberacion(idAvion, subIndex) {
 function eliminarPendienteLiberacion(idAvion, subIndex) {
     if(confirm("¿Eliminar este elemento del equipo?")) {
         sesionActual.liberacionItems[idAvion].splice(subIndex, 1);
-        sesionActual.liberacionChecks[idAvion] = []; // Reinicia los checks por seguridad al alterar el orden
+        sesionActual.liberacionChecks[idAvion] = []; 
         renderizarChecklistDesdeSesion();
         verificarEstadoLiberacion(idAvion);
         guardarProgreso();
-        alert("Elemento eliminado. Por favor, vuelve a marcar las casillas listas en este equipo.");
     }
 }
 
@@ -809,12 +916,10 @@ function moverPendienteLiberacion(idAvion, index, direccion) {
     
     if (nuevaPos < 0 || nuevaPos >= items.length) return;
     
-    // Intercambiar los textos en el arreglo
     const tempTexto = items[index];
     items[index] = items[nuevaPos];
     items[nuevaPos] = tempTexto;
     
-    // Intercambiar el estado de los checkboxes para que la palomita acompañe al texto
     let checks = sesionActual.liberacionChecks[idAvion] || [];
     let isCheckedActual = checks.includes(index);
     let isCheckedNuevo = checks.includes(nuevaPos);
@@ -836,7 +941,7 @@ async function guardarProgreso() {
     sesionActual.fotosAeronaves = fotosAeronaves;
     sesionActual.fotosObservaciones = fotosObservaciones;
     await localforage.setItem("sesion_activa_qc", sesionActual);
-    verificarMemoria(); // Checa la memoria al guardar
+    verificarMemoria(); 
 }
 
 function toggleTarea(index) {
@@ -885,11 +990,11 @@ function verificarEstadoLiberacion(idAvion) {
     if (count === totalItems && totalItems > 0) {
         card.classList.add("liberado-ok");
         if (!sesionActual.matriculasHoras[idAvion]) { sesionActual.matriculasHoras[idAvion] = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}); }
-        labelEstado.style.opacity = "1"; labelEstado.style.color = "var(--success)"; labelEstado.innerText = "LIBERADO: " + sesionActual.matriculasHoras[idAvion];
+        labelEstado.style.opacity = "1"; labelEstado.style.color = "var(--success)"; labelEstado.innerText = "¡LISTO! " + sesionActual.matriculasHoras[idAvion];
     } else {
         card.classList.remove("liberado-ok");
         sesionActual.matriculasHoras[idAvion] = null;
-        labelEstado.style.opacity = "0.5"; labelEstado.style.color = "var(--text)"; labelEstado.innerText = "Pendiente (" + count + "/" + totalItems + ")";
+        labelEstado.style.opacity = "0.7"; labelEstado.style.color = "var(--muted)"; labelEstado.innerText = "Inspección en curso (" + count + "/" + totalItems + ")";
     }
     guardarProgreso();
 }
@@ -945,7 +1050,7 @@ function addFotoObservaciones() {
 function renderGaleriaObservaciones() {
   const galeria = document.getElementById('galeriaObservaciones');
   galeria.innerHTML = fotosObservaciones.map((src, index) => `
-    <div class="img-wrapper"><img src="${src}" class="img-thumb" onclick="verImagenGrande('${src}')"><button class="btn-remove-img" onclick="removeFotoObservaciones(${index})">×</button></div>
+    <div class="img-wrapper"><img src="${src}" class="img-thumb" onclick="verImagenGrande(fotosObservaciones[${index}])"><button class="btn-remove-img" onclick="removeFotoObservaciones(${index})"><i class="fas fa-times"></i></button></div>
   `).join('');
 }
 function removeFotoObservaciones(index) { fotosObservaciones.splice(index, 1); renderGaleriaObservaciones(); guardarProgreso(); }
@@ -953,7 +1058,7 @@ function removeFotoObservaciones(index) { fotosObservaciones.splice(index, 1); r
 function renderGaleria(i) {
   const galeria = document.getElementById(`galeria${i}`);
   galeria.innerHTML = fotosAeronaves[i].map((src, index) => `
-    <div class="img-wrapper"><img src="${src}" class="img-thumb" onclick="verImagenGrande('${src}')"><button class="btn-remove-img" onclick="removeFoto(${i}, ${index})">×</button></div>
+    <div class="img-wrapper"><img src="${src}" class="img-thumb" onclick="verImagenGrande(fotosAeronaves[${i}][${index}])"><button class="btn-remove-img" onclick="removeFoto(${i}, ${index})"><i class="fas fa-times"></i></button></div>
   `).join('');
 }
 function removeFoto(i, index) { fotosAeronaves[i].splice(index, 1); renderGaleria(i); guardarProgreso(); }
@@ -974,7 +1079,7 @@ async function validarChecklist() {
   }
   
   const tareasIncompletas = sesionActual.tareas.some(t => !t.hecho);
-  if (tareasIncompletas) { alert("⚠️ Tareas de jornada incompletas."); return; }
+  if (tareasIncompletas) { alert("⚠️ Tareas de jornada incompletas. Asegúrate de palomear todo."); return; }
   
   const colaborador = await localforage.getItem("colaboradorQC");
   const registro = {
@@ -991,9 +1096,9 @@ async function validarChecklist() {
   await localforage.setItem(mesClave, historial);
   await localforage.removeItem("sesion_activa_qc");
   sesionActual = null;
-  alert("✅ Turno Finalizado");
+  alert("✅ ¡Excelente turno! Tus datos se han guardado con éxito.");
   
-  verificarMemoria(); // Checa la memoria tras finalizar el turno
+  verificarMemoria(); 
   irAHistorial();
 }
 
@@ -1045,8 +1150,8 @@ function renderGaleriaEdicion() {
     const galeria = document.getElementById("editGaleria");
     galeria.innerHTML = fotosEditando.map((src, index) => `
         <div class="img-wrapper">
-            <img src="${src}" class="img-thumb" onclick="verImagenGrande('${src}')">
-            <button class="btn-remove-img" onclick="eliminarFotoEdicion(${index})">×</button>
+            <img src="${src}" class="img-thumb" onclick="verImagenGrande(fotosEditando[${index}])">
+            <button class="btn-remove-img" onclick="eliminarFotoEdicion(${index})"><i class="fas fa-times"></i></button>
         </div>
     `).join('');
 }
@@ -1096,27 +1201,27 @@ async function cargarHistorialMensual() {
   document.getElementById("statExtra").innerText = historial.filter(r => r.tiempoExtra === "SI").length;
   const contenedor = document.getElementById("listaHistorial");
   
-  if (historial.length === 0) { contenedor.innerHTML = "<p style='text-align:center; color:var(--muted);'>No hay registros.</p>"; return; }
+  if (historial.length === 0) { contenedor.innerHTML = "<div style='text-align:center; padding:40px 20px; color:var(--muted); background:var(--panel); border-radius:20px;'><i class='fas fa-folder-open fa-3x' style='margin-bottom:15px; opacity:0.5;'></i><br>Aún no hay registros en este mes.</div>"; return; }
   
   contenedor.innerHTML = historial.map((reg, i) => `
-    <div style="padding:15px; border:1px solid #1e293b; margin-bottom:12px; border-radius:15px; background:rgba(2, 6, 23, 0.8);">
-      <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-        <small style="color:var(--accent); font-weight:bold;">${reg.fecha}</small>
-        <small style="color:var(--muted)">Fin: ${reg.horaFin}</small>
+    <div style="padding:20px; margin-bottom:15px; border-radius:20px; background:var(--panel); box-shadow: 0 4px 10px rgba(0,0,0,0.2); border: 1px solid var(--border);">
+      <div style="display:flex; justify-content:space-between; margin-bottom:10px; align-items:center;">
+        <span style="color:var(--accent); font-weight:800; font-size:16px;">${reg.fecha}</span>
+        <span style="color:var(--text); background:rgba(255,255,255,0.1); padding:4px 10px; border-radius:10px; font-size:12px; font-weight:600;"><i class="fas fa-clock"></i> ${reg.horaFin}</span>
       </div>
-      <strong style="font-size:14px;">${reg.jornada} ${reg.matriculas ? '[' + reg.matriculas.map(m => m.id).join(', ') + ']' : ''}</strong>
+      <strong style="font-size:16px; display:block; margin-bottom:10px; color:white;">${reg.jornada} ${reg.matriculas ? ' <span style="color:var(--success);">[' + reg.matriculas.map(m => m.id).join(', ') + ']</span>' : ''}</strong>
       ${reg.matriculas ? reg.matriculas.map(m => `
-        <div style="margin-top:8px;"><small style="color:var(--accent)">${m.id} (${m.hora}):</small>
-          <div style="display:flex; gap:5px; margin-top:3px; overflow-x:auto;">${m.fotos ? m.fotos.map(f => `<img src="${f}" style="height:35px; border-radius:4px; cursor:pointer;" onclick="verImagenGrande('${f}')">`).join('') : ''}</div>
+        <div style="margin-top:12px; background:rgba(0,0,0,0.2); padding:10px; border-radius:12px;"><small style="color:var(--accent); font-weight:bold;"><i class="fas fa-plane"></i> ${m.id} (${m.hora})</small>
+          <div style="display:flex; gap:8px; margin-top:8px; overflow-x:auto;">${m.fotos ? m.fotos.map(f => `<img src="${f}" style="height:45px; width:45px; object-fit:cover; border-radius:8px; cursor:zoom-in; border:1px solid rgba(255,255,255,0.2);" onclick="verImagenGrande('${f}')">`).join('') : ''}</div>
         </div>`).join('') : ''}
-      <div style="margin-top:10px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.1);">
-          <small style="color:var(--muted); display:block; margin-bottom:4px;">Observaciones:</small>
-          <p style="font-size:12px; color:#e2e8f0; margin:0;">${reg.observaciones || "—"}</p>
-          ${reg.fotosObservaciones && reg.fotosObservaciones.length > 0 ? `<div style="display:flex; gap:5px; margin-top:8px; overflow-x:auto;">${reg.fotosObservaciones.map(f => `<img src="${f}" style="height:50px; border-radius:6px; border:1px solid #475569; cursor:pointer;" onclick="verImagenGrande('${f}')">`).join('')}</div>` : ''}
+      <div style="margin-top:15px; padding-top:15px; border-top:1px solid rgba(255,255,255,0.05);">
+          <small style="color:var(--muted); display:block; margin-bottom:6px; font-weight:600;"><i class="fas fa-comment-alt"></i> Observaciones Generales</small>
+          <p style="font-size:14px; color:#e2e8f0; margin:0; line-height:1.4;">${reg.observaciones || "Sin novedades."}</p>
+          ${reg.fotosObservaciones && reg.fotosObservaciones.length > 0 ? `<div style="display:flex; gap:8px; margin-top:10px; overflow-x:auto;">${reg.fotosObservaciones.map(f => `<img src="${f}" style="height:55px; width:55px; object-fit:cover; border-radius:8px; border:1px solid rgba(255,255,255,0.2); cursor:zoom-in;" onclick="verImagenGrande('${f}')">`).join('')}</div>` : ''}
       </div>
-      <div style="display:flex; gap:10px; margin-top:10px;">
-        <button onclick="abrirEditor(${i})" class="btn-warning" style="padding:5px; font-size:10px; height:auto; width:auto; flex:1;"><i class="fas fa-edit"></i> Editar</button>
-        <button onclick="eliminarRegistro(${i})" style="padding:5px; background:var(--danger); font-size:10px; height:auto; width:auto; flex:1;"><i class="fas fa-trash"></i> Borrar</button>
+      <div style="display:flex; gap:10px; margin-top:20px;">
+        <button onclick="abrirEditor(${i})" class="btn-outline" style="border-color:var(--warning); color:var(--warning); padding:10px; flex:1;"><i class="fas fa-edit"></i> Editar</button>
+        <button onclick="eliminarRegistro(${i})" class="btn-danger" style="padding:10px; flex:1;"><i class="fas fa-trash"></i> Borrar</button>
       </div>
     </div>`).join("");
 }
@@ -1127,24 +1232,28 @@ async function exportarPDF(){
   const ahora = new Date();
   const mesClave = `historialQC_${ahora.getFullYear()}-${String(ahora.getMonth()+1).padStart(2,"0")}`;
   const h = await localforage.getItem(mesClave) || [];
-  if(h.length === 0){ alert("No hay datos"); return; }
+  if(h.length === 0){ alert("Aún no hay datos para exportar."); return; }
 
-  doc.setFontSize(16); doc.setTextColor(56, 189, 248);
-  doc.text("REPORTE MENSUAL QC", 14, 20);
+  doc.setFontSize(18); doc.setTextColor(56, 189, 248);
+  doc.text("REPORTE MENSUAL DE CALIDAD (QC)", 14, 20);
+  
+  doc.setFontSize(10); doc.setTextColor(100, 100, 100);
+  doc.text(`Generado el: ${ahora.toLocaleDateString()} a las ${ahora.toLocaleTimeString()}`, 14, 26);
 
   const body = h.map(r => [
     r.fecha + "\n(" + r.horaFin + ")", 
-    r.jornada + (r.matriculas ? "\n" + r.matriculas.map(m => "• " + m.id + " (" + m.hora + ")").join("\n") : ""), 
-    r.observaciones || "—"
+    r.jornada + (r.matriculas ? "\n\n" + r.matriculas.map(m => "• " + m.id + " (" + m.hora + ")").join("\n") : ""), 
+    r.observaciones || "Sin novedades reportadas."
   ]);
 
   doc.autoTable({
-    startY: 30,
-    head: [['Fecha / Culminación', 'Equipos Liberados', 'Observaciones']],
+    startY: 35,
+    head: [['Fecha y Culminación', 'Equipos Inspeccionados', 'Observaciones Generales']],
     body: body,
-    styles: { fontSize: 9, cellPadding: 3 },
-    headStyles: { fillColor: [30, 41, 59] },
-    columnStyles: { 0: {cellWidth: 40}, 1: {cellWidth: 60} }
+    styles: { fontSize: 9, cellPadding: 4, font: 'helvetica' },
+    headStyles: { fillColor: [30, 41, 59], textColor: [255,255,255], fontStyle: 'bold' },
+    columnStyles: { 0: {cellWidth: 40}, 1: {cellWidth: 60} },
+    alternateRowStyles: { fillColor: [245, 248, 250] }
   });
 
   h.forEach((reg, index) => {
@@ -1152,18 +1261,18 @@ async function exportarPDF(){
       if(reg.matriculas && Array.isArray(reg.matriculas)){
           reg.matriculas.forEach(m => {
              if(m.fotos && m.fotos.length > 0) {
-                 m.fotos.forEach((f, i) => { allPhotos.push({ src: f, label: `Aeronave: ${m.id} - Foto ${i+1}` }); });
+                 m.fotos.forEach((f, i) => { allPhotos.push({ src: f, label: `Evidencia Aeronave: ${m.id} (Foto ${i+1})` }); });
              }
           });
       }
       if(reg.fotosObservaciones && Array.isArray(reg.fotosObservaciones)){
-          reg.fotosObservaciones.forEach((f, i) => { allPhotos.push({ src: f, label: `Observación General - Foto ${i+1}` }); });
+          reg.fotosObservaciones.forEach((f, i) => { allPhotos.push({ src: f, label: `Evidencia de Observación General (Foto ${i+1})` }); });
       }
       
       if(allPhotos.length > 0) {
           doc.addPage(); 
-          doc.setFontSize(14); doc.setTextColor(0, 0, 0);
-          doc.text(`Anexo Fotográfico - Fecha: ${reg.fecha}`, 14, 15);
+          doc.setFontSize(14); doc.setTextColor(30, 41, 59);
+          doc.text(`Anexo Fotográfico - Fecha del Turno: ${reg.fecha}`, 14, 15);
           let yPos = 25;
           const pageHeight = doc.internal.pageSize.height;
           
@@ -1183,18 +1292,19 @@ async function exportarPDF(){
                 
                 const xPos = 20 + (170 - pdfImgWidth) / 2;
 
-                doc.text(photo.label, 14, yPos - 2);
+                doc.setFontSize(10); doc.setTextColor(100,100,100);
+                doc.text(photo.label, 20, yPos - 3);
+                
                 doc.addImage(photo.src, 'JPEG', xPos, yPos, pdfImgWidth, pdfImgHeight);
-                doc.setDrawColor(200); doc.rect(xPos, yPos, pdfImgWidth, pdfImgHeight);
+                doc.setDrawColor(200); doc.setLineWidth(0.5); doc.rect(xPos, yPos, pdfImgWidth, pdfImgHeight);
                 
                 yPos += pdfImgHeight + 15;
-              } catch(e) { console.error("Error imagen", e); }
+              } catch(e) { console.error("Error al procesar la imagen para el PDF", e); }
           });
       }
   });
   doc.save(`Reporte_QC_${mesClave}.pdf`);
   
-  // Opcional: Ocultar banner si el PDF se exporta exitosamente
   document.getElementById("alertaMemoria").style.display = "none";
 }
 
@@ -1211,12 +1321,14 @@ async function irAHistorial(){
 }
 
 async function eliminarRegistro(i) {
-  const mesClave = `historialQC_${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}`;
-  let h = await localforage.getItem(mesClave);
-  h.splice(i, 1);
-  await localforage.setItem(mesClave, h);
-  cargarHistorialMensual();
-  verificarMemoria();
+  if(confirm("¿Estás seguro de que deseas eliminar este registro completo?")){
+      const mesClave = `historialQC_${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}`;
+      let h = await localforage.getItem(mesClave);
+      h.splice(i, 1);
+      await localforage.setItem(mesClave, h);
+      cargarHistorialMensual();
+      verificarMemoria();
+  }
 }
 
 function volverAlInicio(){ document.getElementById("pantallaMenu").style.display = "none"; document.getElementById("pantallaInicio").style.display = "block"; }
@@ -1225,7 +1337,7 @@ function volverAJornada(){ document.getElementById("pantallaTiempoExtra").style.
 async function nuevaJornada(){ 
     const sesion = await localforage.getItem("sesion_activa_qc");
     if(sesion){
-        if(confirm("Hay un turno en curso. Si inicias uno nuevo, se perderá el actual. ¿Continuar?")) {
+        if(confirm("Tienes un turno en curso. Si inicias uno nuevo, se perderá tu progreso actual. ¿Estás seguro de continuar?")) {
             await localforage.removeItem("sesion_activa_qc");
             location.reload();
         }
@@ -1233,12 +1345,12 @@ async function nuevaJornada(){
 }
 
 async function eliminarHistorial(){
-  if(confirm("¿Borrar todo el mes? Asegúrate de haber respaldado en PDF primero.")){
+  if(confirm("⚠️ ¿Estás completamente seguro de borrar TODO el mes? Asegúrate de haber guardado tu PDF de respaldo primero.")){
     const mesClave = `historialQC_${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,"0")}`;
     await localforage.removeItem(mesClave);
     cargarHistorialMensual();
     verificarMemoria();
-    alert("Mes borrado con éxito. La memoria se ha liberado.");
+    alert("✅ El mes ha sido borrado con éxito. Memoria liberada.");
   }
 }
 </script>
