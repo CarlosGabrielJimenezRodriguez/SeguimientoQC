@@ -33,10 +33,42 @@
     min-height: 100vh;
   }
 
+  /* NUEVO ESTILO: Alerta de Memoria */
+  #alertaMemoria {
+    background: rgba(239, 68, 68, 0.95);
+    color: white;
+    padding: 12px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: bold;
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 9999;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    backdrop-filter: blur(5px);
+  }
+  #alertaMemoria button {
+    background: white;
+    color: var(--danger);
+    padding: 6px 12px;
+    margin-top: 8px;
+    border-radius: 8px;
+    font-size: 12px;
+    border: none;
+    cursor: pointer;
+    width: auto;
+    display: inline-flex;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  }
+
   main {
     width: 100%;
     max-width: 450px;
-    margin: 15px;
+    margin: 40px 15px 15px 15px; /* Margen superior ajustado por si sale la alerta */
     background: var(--panel);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
@@ -236,6 +268,12 @@
 </style>
 </head>
 <body>
+
+<div id="alertaMemoria">
+    <i class="fas fa-exclamation-triangle"></i> ¡Memoria casi llena! Para evitar fallas, genera un respaldo y borra el mes.
+    <br>
+    <button onclick="exportarPDF()"><i class="fas fa-file-pdf"></i> Generar PDF ahora</button>
+</div>
 
 <div id="visorImg" class="modal-overlay" onclick="cerrarVisor()">
   <span class="close-modal">&times;</span>
@@ -440,7 +478,40 @@ window.onload = async function() {
             await localforage.removeItem("sesion_activa_qc");
         }
     }
+    
+    verificarMemoria(); // Chequeo inicial de memoria
 };
+
+// --- SENSOR DE MEMORIA ---
+async function verificarMemoria() {
+    try {
+        let mostrarAlerta = false;
+        
+        // 1. Validar tamaño del historial (prevención de Crash al generar PDF)
+        const mesClave = `historialQC_${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,"0")}`;
+        const historial = await localforage.getItem(mesClave);
+        if (historial) {
+            let totalFotos = 0;
+            historial.forEach(h => {
+                if (h.fotosObservaciones) totalFotos += h.fotosObservaciones.length;
+                if (h.matriculas) h.matriculas.forEach(m => totalFotos += (m.fotos ? m.fotos.length : 0));
+            });
+            // Si hay más de 45 fotos almacenadas en el mes, el PDF podría ser muy pesado
+            if (totalFotos >= 45) mostrarAlerta = true; 
+        }
+
+        // 2. Validar cuota nativa del navegador (si está disponible)
+        if (navigator.storage && navigator.storage.estimate) {
+            const estimate = await navigator.storage.estimate();
+            const porcentaje = (estimate.usage / estimate.quota) * 100;
+            if (porcentaje > 85) mostrarAlerta = true;
+        }
+
+        const banner = document.getElementById("alertaMemoria");
+        banner.style.display = mostrarAlerta ? "block" : "none";
+        
+    } catch(e) { console.error("Error al verificar memoria:", e); }
+}
 
 // --- CONFIG MAESTRA ---
 function irAConfig() {
@@ -587,7 +658,6 @@ function renderizarChecklistDesdeSesion() {
         } else {
             const checked = itemObj.hecho ? "checked" : "";
             const horaText = itemObj.hora ? ` ✔ ${itemObj.hora}` : "";
-            // NUEVO: Agregamos el botón de la campana aquí
             contenidoItem = `
                 <input type="checkbox" id="item${index}" ${checked} onchange="toggleTarea(${index})">
                 <label for="item${index}">${itemObj.texto} <small id="hora${index}">${horaText}</small></label>
@@ -609,16 +679,21 @@ function renderizarChecklistDesdeSesion() {
             itemsLibDinamicos.forEach((subItem, subIndex) => {
                 const isChecked = sesionActual.liberacionChecks[i] && sesionActual.liberacionChecks[i].includes(subIndex) ? "checked" : "";
                 
-                let btnDelete = "";
+                let btnBotonesEdicion = "";
                 if (modoEdicionActivo) {
-                    btnDelete = `<button class="btn-del-task" style="width:20px; height:20px; font-size:10px; margin-left:auto; padding:0; flex-shrink:0;" onclick="eliminarPendienteLiberacion(${i}, ${subIndex})"><i class="fas fa-times"></i></button>`;
+                    btnBotonesEdicion = `
+                        <button class="btn-move" style="width:20px; height:20px; font-size:10px; margin-left:auto; padding:0; flex-shrink:0;" onclick="moverPendienteLiberacion(${i}, ${subIndex}, -1)">⬆</button>
+                        <button class="btn-move" style="width:20px; height:20px; font-size:10px; margin-left:2px; padding:0; flex-shrink:0;" onclick="moverPendienteLiberacion(${i}, ${subIndex}, 1)">⬇</button>
+                        <button class="btn-outline" style="width:20px; height:20px; font-size:10px; margin-left:2px; padding:0; flex-shrink:0; border-color:#38bdf8; color:#38bdf8;" onclick="editarPendienteLiberacion(${i}, ${subIndex})"><i class="fas fa-pencil-alt"></i></button>
+                        <button class="btn-del-task" style="width:20px; height:20px; font-size:10px; margin-left:2px; padding:0; flex-shrink:0;" onclick="eliminarPendienteLiberacion(${i}, ${subIndex})"><i class="fas fa-times"></i></button>
+                    `;
                 }
 
                 miniItemsHTML += `
                     <div class="mini-option" style="align-items:center;">
                         <input type="checkbox" class="sub-check-${i}" data-idx="${subIndex}" ${isChecked} onchange="verificarEstadoLiberacion(${i})">
                         <span style="flex-grow:1;">${subItem}</span>
-                        ${btnDelete}
+                        ${btnBotonesEdicion}
                     </div>
                 `;
             });
@@ -663,9 +738,8 @@ function crearAlarma(nombreTarea) {
     const minutos = parseInt(minutosStr);
     const ahora = new Date();
     const inicio = new Date(ahora.getTime() + minutos * 60000);
-    const fin = new Date(inicio.getTime() + 15 * 60000); // Duración de 15 min en el calendario
+    const fin = new Date(inicio.getTime() + 15 * 60000); 
 
-    // Formatear fecha para el estándar ICS (YYYYMMDDTHHMMSSZ en formato UTC)
     const formatICSDate = (date) => {
         return date.toISOString().replace(/-|:|\.\d+/g, '').substring(0, 15) + 'Z';
     };
@@ -685,7 +759,6 @@ END:VALARM
 END:VEVENT
 END:VCALENDAR`;
 
-    // Generar archivo y forzar descarga
     const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -697,6 +770,7 @@ END:VCALENDAR`;
     window.URL.revokeObjectURL(url);
 }
 
+// --- EDICIÓN DE LIBERACIÓN Y ORDENAMIENTO ---
 function agregarPendienteLiberacion(idAvion) {
     const matricula = sesionActual.matriculas[idAvion] ? sesionActual.matriculas[idAvion].toUpperCase() : "Equipo " + idAvion;
     const texto = prompt("Describe el pendiente para " + matricula + ":");
@@ -708,15 +782,52 @@ function agregarPendienteLiberacion(idAvion) {
     }
 }
 
+function editarPendienteLiberacion(idAvion, subIndex) {
+    const actual = sesionActual.liberacionItems[idAvion][subIndex];
+    const nuevoTexto = prompt("Edita el ítem de liberación:", actual);
+    if(nuevoTexto !== null && nuevoTexto.trim() !== "") {
+        sesionActual.liberacionItems[idAvion][subIndex] = nuevoTexto.trim();
+        renderizarChecklistDesdeSesion();
+        guardarProgreso();
+    }
+}
+
 function eliminarPendienteLiberacion(idAvion, subIndex) {
     if(confirm("¿Eliminar este elemento del equipo?")) {
         sesionActual.liberacionItems[idAvion].splice(subIndex, 1);
-        sesionActual.liberacionChecks[idAvion] = []; 
+        sesionActual.liberacionChecks[idAvion] = []; // Reinicia los checks por seguridad al alterar el orden
         renderizarChecklistDesdeSesion();
         verificarEstadoLiberacion(idAvion);
         guardarProgreso();
         alert("Elemento eliminado. Por favor, vuelve a marcar las casillas listas en este equipo.");
     }
+}
+
+function moverPendienteLiberacion(idAvion, index, direccion) {
+    const nuevaPos = index + direccion;
+    const items = sesionActual.liberacionItems[idAvion];
+    
+    if (nuevaPos < 0 || nuevaPos >= items.length) return;
+    
+    // Intercambiar los textos en el arreglo
+    const tempTexto = items[index];
+    items[index] = items[nuevaPos];
+    items[nuevaPos] = tempTexto;
+    
+    // Intercambiar el estado de los checkboxes para que la palomita acompañe al texto
+    let checks = sesionActual.liberacionChecks[idAvion] || [];
+    let isCheckedActual = checks.includes(index);
+    let isCheckedNuevo = checks.includes(nuevaPos);
+    
+    checks = checks.filter(idx => idx !== index && idx !== nuevaPos);
+    if (isCheckedActual) checks.push(nuevaPos);
+    if (isCheckedNuevo) checks.push(index);
+    
+    sesionActual.liberacionChecks[idAvion] = checks;
+    
+    renderizarChecklistDesdeSesion();
+    verificarEstadoLiberacion(idAvion);
+    guardarProgreso();
 }
 
 async function guardarProgreso() {
@@ -725,6 +836,7 @@ async function guardarProgreso() {
     sesionActual.fotosAeronaves = fotosAeronaves;
     sesionActual.fotosObservaciones = fotosObservaciones;
     await localforage.setItem("sesion_activa_qc", sesionActual);
+    verificarMemoria(); // Checa la memoria al guardar
 }
 
 function toggleTarea(index) {
@@ -793,12 +905,12 @@ function addFoto(i) {
     img.onload = function() {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
-        const MAX_WIDTH = 1200; 
+        const MAX_WIDTH = 800; 
         const scale = MAX_WIDTH / img.width;
         canvas.width = MAX_WIDTH;
         canvas.height = img.height * scale;
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        fotosAeronaves[i].push(canvas.toDataURL('image/jpeg', 0.85)); 
+        fotosAeronaves[i].push(canvas.toDataURL('image/jpeg', 0.60)); 
         renderGaleria(i);
         guardarProgreso(); fileInput.value = ""; 
     }
@@ -817,12 +929,12 @@ function addFotoObservaciones() {
     img.onload = function() {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
-        const MAX_WIDTH = 1200; 
+        const MAX_WIDTH = 800; 
         const scale = MAX_WIDTH / img.width;
         canvas.width = MAX_WIDTH;
         canvas.height = img.height * scale;
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        fotosObservaciones.push(canvas.toDataURL('image/jpeg', 0.85)); 
+        fotosObservaciones.push(canvas.toDataURL('image/jpeg', 0.60)); 
         renderGaleriaObservaciones();
         guardarProgreso(); fileInput.value = ""; 
     }
@@ -880,6 +992,8 @@ async function validarChecklist() {
   await localforage.removeItem("sesion_activa_qc");
   sesionActual = null;
   alert("✅ Turno Finalizado");
+  
+  verificarMemoria(); // Checa la memoria tras finalizar el turno
   irAHistorial();
 }
 
@@ -949,12 +1063,12 @@ function addFotoEdicion() {
     img.onload = function() {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
-        const MAX_WIDTH = 1200; 
+        const MAX_WIDTH = 800; 
         const scale = MAX_WIDTH / img.width;
         canvas.width = MAX_WIDTH;
         canvas.height = img.height * scale;
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        fotosEditando.push(canvas.toDataURL('image/jpeg', 0.85));
+        fotosEditando.push(canvas.toDataURL('image/jpeg', 0.60));
         renderGaleriaEdicion(); fileInput.value = ""; 
     }
   }
@@ -968,7 +1082,9 @@ async function guardarEdicion() {
     historial[indiceEditando].observaciones = document.getElementById("editObservaciones").value;
     historial[indiceEditando].fotosObservaciones = [...fotosEditando];
     await localforage.setItem(mesClave, historial);
-    alert("✅ Registro actualizado correctamente"); cerrarEditor(); cargarHistorialMensual(); 
+    alert("✅ Registro actualizado correctamente"); cerrarEditor(); 
+    verificarMemoria();
+    cargarHistorialMensual(); 
 }
 
 async function cargarHistorialMensual() {
@@ -1077,6 +1193,9 @@ async function exportarPDF(){
       }
   });
   doc.save(`Reporte_QC_${mesClave}.pdf`);
+  
+  // Opcional: Ocultar banner si el PDF se exporta exitosamente
+  document.getElementById("alertaMemoria").style.display = "none";
 }
 
 function filtrarHistorial() {
@@ -1084,18 +1203,22 @@ function filtrarHistorial() {
   const tarjetas = document.querySelectorAll("#listaHistorial > div");
   tarjetas.forEach(t => t.style.display = t.innerText.toLowerCase().includes(busqueda) ? "block" : "none");
 }
+
 async function irAHistorial(){
   document.querySelectorAll("section").forEach(s => s.style.display = "none");
   document.getElementById("pantallaHistorial").style.display = "block";
   await cargarHistorialMensual();
 }
+
 async function eliminarRegistro(i) {
   const mesClave = `historialQC_${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}`;
   let h = await localforage.getItem(mesClave);
   h.splice(i, 1);
   await localforage.setItem(mesClave, h);
   cargarHistorialMensual();
+  verificarMemoria();
 }
+
 function volverAlInicio(){ document.getElementById("pantallaMenu").style.display = "none"; document.getElementById("pantallaInicio").style.display = "block"; }
 function volverAJornada(){ document.getElementById("pantallaTiempoExtra").style.display = "none"; document.getElementById("pantallaMenu").style.display = "block"; }
 
@@ -1108,11 +1231,14 @@ async function nuevaJornada(){
         }
     } else { location.reload(); }
 }
+
 async function eliminarHistorial(){
-  if(confirm("¿Borrar todo el mes?")){
+  if(confirm("¿Borrar todo el mes? Asegúrate de haber respaldado en PDF primero.")){
     const mesClave = `historialQC_${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,"0")}`;
     await localforage.removeItem(mesClave);
     cargarHistorialMensual();
+    verificarMemoria();
+    alert("Mes borrado con éxito. La memoria se ha liberado.");
   }
 }
 </script>
