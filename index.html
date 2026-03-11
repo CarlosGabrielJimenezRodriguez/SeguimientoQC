@@ -27,7 +27,7 @@
     --neon-green: #00d26a;
 
     --accent: var(--viva-green);
-    --danger: #d32027; /* Mantenemos el rojo corporativo para botones de borrar */
+    --danger: #d32027; 
     --success: var(--neon-green); 
     --warning: #f59e0b;
   }
@@ -377,16 +377,115 @@
       gap: 10px;
   }
 
-  /* --- NUEVOS ESTILOS PARA LA AGENDA --- */
-  .agenda-container { background: var(--panel); border-radius: 8px; padding: 15px; border: 1px solid var(--border); margin-top: 10px; }
-  .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-  .bloque-agenda { margin-bottom: 20px; border-left: 4px solid var(--viva-green); padding-left: 12px; }
-  .bloque-agenda h4 { margin: 0 0 10px 0; color: var(--viva-green); font-size: 14px; text-transform: uppercase; }
-  .task-item { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
-  .task-item input[type="checkbox"] { width: 20px; height: 20px; cursor: pointer; }
-  .task-item input[type="text"] { border: none; border-bottom: 1px solid transparent; padding: 4px; font-size: 14px; background: transparent; flex-grow: 1;}
-  .task-item input[type="text"]:focus { border-bottom-color: var(--viva-green); outline: none; background: #f9f9f9; }
-  .completed { text-decoration: line-through; color: var(--muted); }
+  /* ========================================================
+     ESTILOS DEL CALENDARIO VISUAL (INSPIRADO EN LAS IMÁGENES)
+     ======================================================== */
+  .calendar-wrap {
+      background: var(--panel);
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      overflow: hidden;
+      margin-top: 15px;
+      border: 1px solid var(--border);
+  }
+  .calendar-header-bar {
+      background: var(--viva-green);
+      color: white;
+      padding: 15px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 16px;
+  }
+  .calendar-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px;
+      font-weight: bold;
+      color: var(--viva-green);
+  }
+  .calendar-controls button {
+      background: transparent;
+      color: var(--muted);
+      border: none;
+      font-size: 16px;
+      width: auto;
+      padding: 5px 15px;
+      margin: 0;
+  }
+  .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      text-align: center;
+      gap: 5px;
+      padding: 0 15px 15px;
+  }
+  .day-name {
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: bold;
+      text-transform: uppercase;
+      margin-bottom: 5px;
+  }
+  .calendar-day {
+      padding: 10px 5px;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      position: relative;
+      color: var(--text);
+      border: 1px solid transparent;
+      transition: all 0.2s ease;
+  }
+  .calendar-day.today {
+      border-color: var(--viva-green);
+      font-weight: bold;
+      color: var(--viva-green);
+  }
+  .calendar-day.has-event::after {
+      content: '';
+      position: absolute;
+      bottom: 4px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 5px;
+      height: 5px;
+      background: var(--neon-red);
+      border-radius: 50%;
+  }
+  .calendar-day:active { background: #f0fdf4; }
+  
+  .upcoming-events-wrap {
+      background: var(--panel);
+      border-radius: 8px;
+      padding: 15px;
+      margin-top: 15px;
+      border: 1px solid var(--border);
+  }
+  .upcoming-events-wrap h4 {
+      margin: 0 0 15px 0;
+      color: var(--viva-green);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 15px;
+  }
+  .event-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 13px;
+      padding: 10px 0;
+      border-bottom: 1px dashed var(--border);
+      color: var(--text);
+  }
+  .event-item:last-child { border-bottom: none; }
+  .event-item-left { display: flex; align-items: center; gap: 8px; }
+  .event-icon { color: var(--neon-red); font-size: 14px; }
+  .event-date { font-weight: bold; color: var(--danger); }
+  .btn-del-event { color: var(--muted); background: transparent; border: none; padding: 5px; margin: 0; width: auto; font-size: 12px;}
 </style>
 </head>
 <body>
@@ -450,7 +549,11 @@
       
       <div class="action-bottom-bar" style="border: none; padding-top: 0;">
         <button type="submit" id="btnIniciar"><i class="fas fa-play"></i> Iniciar Jornada</button>
-        <button type="button" onclick="irAAgenda()" class="btn-outline" style="background: #eef2ff; margin-bottom: 10px;"><i class="fas fa-calendar-alt"></i> Mi Agenda de Trabajo</button>
+        
+        <button type="button" onclick="abrirCalendario()" class="btn-outline" style="background: #eef2ff; margin-bottom: 10px; border-color: #12b886; color: #12b886;">
+            <i class="fas fa-calendar-alt"></i> Ver Mi Calendario
+        </button>
+
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
             <button type="button" onclick="irAHistorial()" class="btn-outline"><i class="fas fa-history"></i> Historial</button>
             <button type="button" onclick="irAConfig()" class="btn-outline" style="color: var(--muted); border-color: var(--border);"><i class="fas fa-cog"></i> Ajustes</button>
@@ -459,16 +562,28 @@
     </form>
   </section>
 
-  <section id="pantallaAgenda" style="display:none;">
-    <h1><i class="fas fa-calendar-check"></i> Agenda de Operaciones</h1>
-    <div class="agenda-container">
-        <div class="calendar-header">
-            <input type="date" id="fechaAgenda" onchange="cambiarFechaAgenda()">
+  <section id="pantallaCalendario" style="display:none;">
+    <div class="calendar-wrap">
+      <div class="calendar-header-bar">
+        <i class="fas fa-calendar-alt"></i> Calendario de Eventos
+      </div>
+      <div class="calendar-controls">
+        <button type="button" onclick="cambiarMes(-1)"><i class="fas fa-chevron-left"></i></button>
+        <span id="mesAnioDisplay"></span>
+        <button type="button" onclick="cambiarMes(1)"><i class="fas fa-chevron-right"></i></button>
+      </div>
+      <div class="calendar-grid" id="diasCalendario">
         </div>
-        <div id="bloquesTareasAgenda"></div>
     </div>
-    <div class="action-bottom-bar">
-        <button onclick="volverInicioDesdeAgenda()" class="btn-outline" style="color: var(--muted); border-color: var(--border);"><i class="fas fa-arrow-left"></i> Volver al Inicio</button>
+    
+    <div class="upcoming-events-wrap">
+      <h4><i class="fas fa-calendar-check"></i> Próximos Eventos</h4>
+      <div id="listaProximosEventos">
+        </div>
+    </div>
+
+    <div class="action-bottom-bar" style="border:none;">
+      <button onclick="cerrarCalendario()" class="btn-outline" style="color: var(--muted); border-color: var(--border);"><i class="fas fa-arrow-left"></i> Volver al Inicio</button>
     </div>
   </section>
 
@@ -611,10 +726,6 @@ const checklistsBase = {
   ]
 };
 
-// --- VARIABLES INYECTADAS PARA LA AGENDA ---
-const CATEGORIAS_AGENDA = ["Mañana (08:00 - 12:00)", "Tarde (12:00 - 17:00)", "Noche (17:00 - 22:00)", "Pendientes / Extras"];
-let agendaData = {};
-
 let misChecklists = checklistsBase;
 let fotosAeronaves = { 1: [], 2: [], 3: [], 4: [] };
 let fotosObservaciones = [];
@@ -622,6 +733,10 @@ let indiceEditando = -1;
 let fotosEditando = [];
 let sesionActual = null;
 let modoEdicionActivo = false; 
+
+// --- VARIABLES PARA EL CALENDARIO ---
+let eventosCalendarioQC = {}; // Formato: { "2026-03-12": ["Lavar auto", "Junta"] }
+let fechaCalendarioActiva = new Date();
 
 // --- INICIO Y RESTAURACIÓN ---
 window.onload = async function() {
@@ -632,11 +747,6 @@ window.onload = async function() {
         storeName: 'datos_trabajo'
     });
 
-    // --- CARGA DE AGENDA INYECTADA ---
-    const agendaGuardada = await localforage.getItem("agenda_trabajo_gabriel");
-    if(agendaGuardada) agendaData = agendaGuardada;
-    document.getElementById("fechaAgenda").valueAsDate = new Date();
-
     const listasGuardadas = await localforage.getItem("configChecklistsQC");
     if (listasGuardadas) { misChecklists = listasGuardadas; }
     
@@ -644,6 +754,10 @@ window.onload = async function() {
         misChecklists.Liberacion = checklistsBase.Liberacion;
         await localforage.setItem("configChecklistsQC", misChecklists);
     }
+
+    // --- CARGAR EVENTOS DEL CALENDARIO ---
+    const eventosGuardados = await localforage.getItem("eventos_calendario_qc");
+    if (eventosGuardados) eventosCalendarioQC = eventosGuardados;
 
     const sesionGuardada = await localforage.getItem("sesion_activa_qc");
     if (sesionGuardada) {
@@ -669,6 +783,127 @@ window.onload = async function() {
     
     verificarMemoria(); 
 };
+
+// ==========================================
+// FUNCIONES DEL CALENDARIO VISUAL (NUEVAS)
+// ==========================================
+function abrirCalendario() {
+    document.querySelectorAll("main > section").forEach(s => s.style.display = "none");
+    document.getElementById("pantallaCalendario").style.display = "block";
+    fechaCalendarioActiva = new Date(); // Resetear a mes actual al abrir
+    renderizarCalendario();
+}
+
+function cerrarCalendario() {
+    document.getElementById("pantallaCalendario").style.display = "none";
+    document.getElementById("pantallaInicio").style.display = "block";
+}
+
+function cambiarMes(offset) {
+    fechaCalendarioActiva.setMonth(fechaCalendarioActiva.getMonth() + offset);
+    renderizarCalendario();
+}
+
+function renderizarCalendario() {
+    const contenedor = document.getElementById("diasCalendario");
+    const displayMes = document.getElementById("mesAnioDisplay");
+    contenedor.innerHTML = "";
+
+    const anio = fechaCalendarioActiva.getFullYear();
+    const mes = fechaCalendarioActiva.getMonth();
+    
+    const nombresMeses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+    displayMes.innerText = `${nombresMeses[mes]} ${anio}`;
+
+    // Nombres de los días
+    const diasSemana = ["Do", "Lu", "Ma", "Mi", "Ju", "Vi", "Sa"];
+    diasSemana.forEach(dia => {
+        contenedor.innerHTML += `<div class="day-name">${dia}</div>`;
+    });
+
+    const primerDiaMes = new Date(anio, mes, 1).getDay();
+    const diasEnMes = new Date(anio, mes + 1, 0).getDate();
+    
+    // Espacios vacíos al principio
+    for (let i = 0; i < primerDiaMes; i++) {
+        contenedor.innerHTML += `<div></div>`;
+    }
+
+    const hoy = new Date();
+    
+    // Días del mes
+    for (let dia = 1; dia <= diasEnMes; dia++) {
+        // Formatear fecha a YYYY-MM-DD para buscar eventos
+        const mesFormateado = String(mes + 1).padStart(2, '0');
+        const diaFormateado = String(dia).padStart(2, '0');
+        const fechaStr = `${anio}-${mesFormateado}-${diaFormateado}`;
+        
+        const esHoy = (dia === hoy.getDate() && mes === hoy.getMonth() && anio === hoy.getFullYear()) ? "today" : "";
+        const tieneEvento = (eventosCalendarioQC[fechaStr] && eventosCalendarioQC[fechaStr].length > 0) ? "has-event" : "";
+
+        contenedor.innerHTML += `<div class="calendar-day ${esHoy} ${tieneEvento}" onclick="gestionarDiaCalendario('${fechaStr}')">${dia}</div>`;
+    }
+
+    renderizarProximosEventos();
+}
+
+async function gestionarDiaCalendario(fechaStr) {
+    const texto = prompt(`Agregar evento para el ${fechaStr}:`);
+    if (texto && texto.trim() !== "") {
+        if (!eventosCalendarioQC[fechaStr]) {
+            eventosCalendarioQC[fechaStr] = [];
+        }
+        eventosCalendarioQC[fechaStr].push(texto.trim());
+        await localforage.setItem("eventos_calendario_qc", eventosCalendarioQC);
+        renderizarCalendario();
+    }
+}
+
+async function eliminarEventoCalendario(fechaStr, index) {
+    if (confirm("¿Eliminar este evento?")) {
+        eventosCalendarioQC[fechaStr].splice(index, 1);
+        if (eventosCalendarioQC[fechaStr].length === 0) {
+            delete eventosCalendarioQC[fechaStr];
+        }
+        await localforage.setItem("eventos_calendario_qc", eventosCalendarioQC);
+        renderizarCalendario();
+    }
+}
+
+function renderizarProximosEventos() {
+    const lista = document.getElementById("listaProximosEventos");
+    lista.innerHTML = "";
+    
+    const hoyStr = new Date().toISOString().split('T')[0];
+    
+    // Obtener todas las fechas con eventos y ordenarlas
+    let fechasConEventos = Object.keys(eventosCalendarioQC).sort();
+    
+    // Filtrar para mostrar solo desde hoy en adelante
+    let proximasFechas = fechasConEventos.filter(f => f >= hoyStr);
+
+    if (proximasFechas.length === 0) {
+        lista.innerHTML = `<div style="color: var(--muted); font-size: 13px; text-align: center; padding: 10px;">No hay eventos próximos agendados.</div>`;
+        return;
+    }
+
+    // Mostrar hasta los próximos 5 días con eventos
+    proximasFechas.slice(0, 5).forEach(fecha => {
+        eventosCalendarioQC[fecha].forEach((evento, index) => {
+            lista.innerHTML += `
+                <div class="event-item">
+                    <div class="event-item-left">
+                        <i class="fas fa-exclamation-circle event-icon"></i>
+                        <span class="event-date">${fecha}:</span>
+                        <span>${evento}</span>
+                    </div>
+                    <button class="btn-del-event" onclick="eliminarEventoCalendario('${fecha}', ${index})"><i class="fas fa-times"></i></button>
+                </div>
+            `;
+        });
+    });
+}
+// ==========================================
 
 // --- SENSOR DE MEMORIA ---
 async function verificarMemoria() {
@@ -1145,62 +1380,6 @@ function volverAlInicio(){ document.getElementById("pantallaMenu").style.display
 function volverAJornada(){ document.getElementById("pantallaTiempoExtra").style.display = "none"; document.getElementById("pantallaMenu").style.display = "block"; }
 async function nuevaJornada(){ const s = await localforage.getItem("sesion_activa_qc"); if(s){ if(confirm("Tienes un turno en curso. Si inicias uno nuevo, se perderá tu progreso actual.")){ await localforage.removeItem("sesion_activa_qc"); location.reload(); } } else { location.reload(); } }
 async function eliminarHistorial(){ if(confirm("⚠️ ¿Estás seguro de borrar TODO el mes?")){ const mesClave = `historialQC_${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,"0")}`; await localforage.removeItem(mesClave); cargarHistorialMensual(); verificarMemoria(); alert("✅ Mes borrado."); } }
-
-// --- FUNCIONES NUEVAS DE LA AGENDA ---
-function irAAgenda() {
-    document.querySelectorAll("section").forEach(s => s.style.display = "none");
-    document.getElementById("pantallaAgenda").style.display = "block";
-    renderAgenda();
-}
-
-function volverInicioDesdeAgenda() {
-    document.getElementById("pantallaAgenda").style.display = "none";
-    document.getElementById("pantallaInicio").style.display = "block";
-}
-
-function cambiarFechaAgenda() { renderAgenda(); }
-
-async function renderAgenda() {
-    const fecha = document.getElementById("fechaAgenda").value;
-    const contenedor = document.getElementById("bloquesTareasAgenda");
-    contenedor.innerHTML = "";
-
-    if (!agendaData[fecha]) {
-        agendaData[fecha] = CATEGORIAS_AGENDA.map(cat => ({
-            titulo: cat,
-            tareas: Array(5).fill("").map(() => ({ texto: "", hecho: false }))
-        }));
-    }
-
-    agendaData[fecha].forEach((bloque, bIdx) => {
-        let tareasHTML = bloque.tareas.map((t, tIdx) => `
-            <div class="task-item">
-                <input type="checkbox" ${t.hecho ? 'checked' : ''} onchange="toggleTareaAgenda(${bIdx}, ${tIdx})">
-                <input type="text" class="${t.hecho ? 'completed' : ''}" value="${t.texto}" placeholder="Nueva tarea..." onchange="editTareaAgenda(${bIdx}, ${tIdx}, this.value)">
-            </div>
-        `).join('');
-
-        contenedor.innerHTML += `
-            <div class="bloque-agenda">
-                <h4>${bloque.titulo}</h4>
-                ${tareasHTML}
-            </div>
-        `;
-    });
-}
-
-async function toggleTareaAgenda(bIdx, tIdx) {
-    const fecha = document.getElementById("fechaAgenda").value;
-    agendaData[fecha][bIdx].tareas[tIdx].hecho = !agendaData[fecha][bIdx].tareas[tIdx].hecho;
-    await localforage.setItem("agenda_trabajo_gabriel", agendaData);
-    renderAgenda();
-}
-
-async function editTareaAgenda(bIdx, tIdx, valor) {
-    const fecha = document.getElementById("fechaAgenda").value;
-    agendaData[fecha][bIdx].tareas[tIdx].texto = valor;
-    await localforage.setItem("agenda_trabajo_gabriel", agendaData);
-}
 </script>
 </body>
 </html>
