@@ -161,9 +161,7 @@
   .btn-success { background: var(--success); color: white; border: none; }
   .btn-warning { background: var(--warning); color: white; border: none; }
 
-  /* ----------------------------------------------------
-     ESTILOS: CHECKBOX ANIMADO Y TACHADO MODERNO
-     ---------------------------------------------------- */
+  /* CHECKBOX ANIMADO */
   #listaChecklist > div {
     display: flex;
     align-items: center;
@@ -279,9 +277,7 @@
   .btn-move:active { background: var(--border); }
   .btn-del-task { background: white; color: var(--danger); width: 30px; height: 30px; margin: 0; padding: 0; border: 1px solid var(--danger); border-radius: 4px; }
 
-  /* ----------------------------------------------------
-     ESTILOS DE LA LIBERACIÓN: MARCO ROJO VIBRANTE Y VERDE
-     ---------------------------------------------------- */
+  /* ESTILOS DE LA LIBERACIÓN */
   .check-item-lib {
     display: flex !important;
     flex-direction: column !important;
@@ -556,7 +552,7 @@
 </main>
 
 <script>
-// --- DATOS INTACTOS DEL PROGRAMA 1 ---
+// --- DATOS INTACTOS ---
 const checklistsBase = {
   Diurno: [
     "Checar entrada", "Hacer Clock in", "FORMS FATIGA (overtime)", "Revisar paso de turno",
@@ -598,6 +594,13 @@ let modoEdicionActivo = false;
 
 // --- INICIO Y RESTAURACIÓN ---
 window.onload = async function() {
+    
+    // --- INTEGRACIÓN: CONFIGURACIÓN DE SEGURIDAD TRABAJO ---
+    localforage.config({
+        name: 'App_Trabajo_Gabriel_QC',
+        storeName: 'datos_trabajo'
+    });
+
     const listasGuardadas = await localforage.getItem("configChecklistsQC");
     if (listasGuardadas) { misChecklists = listasGuardadas; }
     
@@ -635,7 +638,6 @@ window.onload = async function() {
 async function verificarMemoria() {
     try {
         let mostrarAlerta = false;
-        
         const mesClave = `historialQC_${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,"0")}`;
         const historial = await localforage.getItem(mesClave);
         if (historial) {
@@ -646,16 +648,13 @@ async function verificarMemoria() {
             });
             if (totalFotos >= 45) mostrarAlerta = true; 
         }
-
         if (navigator.storage && navigator.storage.estimate) {
             const estimate = await navigator.storage.estimate();
             const porcentaje = (estimate.usage / estimate.quota) * 100;
             if (porcentaje > 85) mostrarAlerta = true;
         }
-
         const banner = document.getElementById("alertaMemoria");
         banner.style.display = mostrarAlerta ? "block" : "none";
-        
     } catch(e) { console.error("Error al verificar memoria:", e); }
 }
 
@@ -773,7 +772,6 @@ function toggleModoEdicion() {
     modoEdicionActivo = !modoEdicionActivo;
     const btn = document.getElementById("btnToggleEdit");
     const zonaAgregar = document.getElementById("zonaAgregar");
-    
     if (modoEdicionActivo) {
         btn.innerHTML = '<i class="fas fa-check"></i> Listo';
         btn.classList.add("btn-success"); btn.classList.remove("btn-outline");
@@ -823,14 +821,11 @@ function renderizarChecklistDesdeSesion() {
 
     if (sesionActual.tipo !== "Curso") {
         contenedor.innerHTML += `<h3 style="margin-top: 35px;"><i class="fas fa-shield-alt"></i> Avance de Aeronaves</h3>`;
-        
         for (let i = 1; i <= 4; i++) {
             let miniItemsHTML = "";
             const itemsLibDinamicos = sesionActual.liberacionItems[i];
-            
             itemsLibDinamicos.forEach((subItem, subIndex) => {
                 const isChecked = sesionActual.liberacionChecks[i] && sesionActual.liberacionChecks[i].includes(subIndex) ? "checked" : "";
-                
                 let btnBotonesEdicion = "";
                 if (modoEdicionActivo) {
                     btnBotonesEdicion = `
@@ -842,7 +837,6 @@ function renderizarChecklistDesdeSesion() {
                         </div>
                     `;
                 }
-
                 miniItemsHTML += `
                     <div class="mini-option">
                         <label class="modern-check-container mini" style="flex-grow:1;">
@@ -854,13 +848,11 @@ function renderizarChecklistDesdeSesion() {
                     </div>
                 `;
             });
-            
             miniItemsHTML += `
                 <div style="text-align: right; margin-top: 10px; border-top: 1px solid var(--border); padding-top: 10px;">
                     <span style="font-size: 13px; color: var(--accent); cursor: pointer; font-weight: bold;" onclick="agregarPendienteLiberacion(${i})"><i class="fas fa-plus-circle"></i> Agregar inspección extra</span>
                 </div>
             `;
-
             const valMat = sesionActual.matriculas[i] || "";
             const estadoTexto = sesionActual.matriculasHoras[i] ? `¡LISTO! ${sesionActual.matriculasHoras[i]}` : "Inspección en curso...";
             const colorEstado = sesionActual.matriculasHoras[i] ? "var(--success)" : "var(--neon-red)";
@@ -872,9 +864,7 @@ function renderizarChecklistDesdeSesion() {
                  <input type="text" id="matEquipo${i}" value="${valMat}" placeholder="MATRÍCULA EQUIPO ${i}" oninput="updateMatricula(${i}, this.value)" style="border:none; flex-grow:1;">
                  <span id="tsLib${i}" style="font-size:11px; color:${colorEstado}; font-weight:bold;">${estadoTexto}</span>
               </div>
-              
               <div class="mini-grid">${miniItemsHTML}</div>
-              
               <div style="margin-top:10px; border-top: 1px dashed var(--border); padding-top:10px;">
                   <button type="button" class="btn-camera" onclick="document.getElementById('file${i}').click()">
                     <i class="fas fa-camera"></i> Evidencia Equipo ${i}
@@ -893,31 +883,12 @@ function renderizarChecklistDesdeSesion() {
 function crearAlarma(nombreTarea) {
     const minutosStr = prompt("¿En cuántos minutos necesitas que suene la alarma para: " + nombreTarea + "?", "15");
     if (!minutosStr || isNaN(minutosStr)) return;
-    
     const minutos = parseInt(minutosStr);
     const ahora = new Date();
     const inicio = new Date(ahora.getTime() + minutos * 60000);
     const fin = new Date(inicio.getTime() + 15 * 60000); 
-
-    const formatICSDate = (date) => {
-        return date.toISOString().replace(/-|:|\.\d+/g, '').substring(0, 15) + 'Z';
-    };
-
-    const icsContent = `BEGIN:VCALENDAR
-VERSION:2.0
-BEGIN:VEVENT
-SUMMARY:QC Pendiente: ${nombreTarea}
-DTSTART:${formatICSDate(inicio)}
-DTEND:${formatICSDate(fin)}
-DESCRIPTION:Recordatorio programado desde Seguimiento QC
-BEGIN:VALARM
-TRIGGER:-PT0M
-ACTION:DISPLAY
-DESCRIPTION:Reminder
-END:VALARM
-END:VEVENT
-END:VCALENDAR`;
-
+    const formatICSDate = (date) => { return date.toISOString().replace(/-|:|\.\d+/g, '').substring(0, 15) + 'Z'; };
+    const icsContent = `BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nSUMMARY:QC Pendiente: ${nombreTarea}\nDTSTART:${formatICSDate(inicio)}\nDTEND:${formatICSDate(fin)}\nDESCRIPTION:Recordatorio programado desde Seguimiento QC\nBEGIN:VALARM\nTRIGGER:-PT0M\nACTION:DISPLAY\nDESCRIPTION:Reminder\nEND:VALARM\nEND:VEVENT\nEND:VCALENDAR`;
     const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -929,61 +900,33 @@ END:VCALENDAR`;
     window.URL.revokeObjectURL(url);
 }
 
-// --- EDICIÓN DE LIBERACIÓN Y ORDENAMIENTO ---
 function agregarPendienteLiberacion(idAvion) {
     const matricula = sesionActual.matriculas[idAvion] ? sesionActual.matriculas[idAvion].toUpperCase() : "Equipo " + idAvion;
     const texto = prompt("Describe el pendiente para " + matricula + ":");
-    if(texto) {
-        sesionActual.liberacionItems[idAvion].push(texto);
-        renderizarChecklistDesdeSesion();
-        verificarEstadoLiberacion(idAvion); 
-        guardarProgreso();
-    }
+    if(texto) { sesionActual.liberacionItems[idAvion].push(texto); renderizarChecklistDesdeSesion(); verificarEstadoLiberacion(idAvion); guardarProgreso(); }
 }
 
 function editarPendienteLiberacion(idAvion, subIndex) {
     const actual = sesionActual.liberacionItems[idAvion][subIndex];
     const nuevoTexto = prompt("Edita el ítem de liberación:", actual);
-    if(nuevoTexto !== null && nuevoTexto.trim() !== "") {
-        sesionActual.liberacionItems[idAvion][subIndex] = nuevoTexto.trim();
-        renderizarChecklistDesdeSesion();
-        guardarProgreso();
-    }
+    if(nuevoTexto !== null && nuevoTexto.trim() !== "") { sesionActual.liberacionItems[idAvion][subIndex] = nuevoTexto.trim(); renderizarChecklistDesdeSesion(); guardarProgreso(); }
 }
 
 function eliminarPendienteLiberacion(idAvion, subIndex) {
-    if(confirm("¿Eliminar este elemento del equipo?")) {
-        sesionActual.liberacionItems[idAvion].splice(subIndex, 1);
-        sesionActual.liberacionChecks[idAvion] = []; 
-        renderizarChecklistDesdeSesion();
-        verificarEstadoLiberacion(idAvion);
-        guardarProgreso();
-    }
+    if(confirm("¿Eliminar este elemento del equipo?")) { sesionActual.liberacionItems[idAvion].splice(subIndex, 1); sesionActual.liberacionChecks[idAvion] = []; renderizarChecklistDesdeSesion(); verificarEstadoLiberacion(idAvion); guardarProgreso(); }
 }
 
 function moverPendienteLiberacion(idAvion, index, direccion) {
     const nuevaPos = index + direccion;
     const items = sesionActual.liberacionItems[idAvion];
-    
     if (nuevaPos < 0 || nuevaPos >= items.length) return;
-    
-    const tempTexto = items[index];
-    items[index] = items[nuevaPos];
-    items[nuevaPos] = tempTexto;
-    
+    const tempTexto = items[index]; items[index] = items[nuevaPos]; items[nuevaPos] = tempTexto;
     let checks = sesionActual.liberacionChecks[idAvion] || [];
-    let isCheckedActual = checks.includes(index);
-    let isCheckedNuevo = checks.includes(nuevaPos);
-    
+    let isCheckedActual = checks.includes(index); let isCheckedNuevo = checks.includes(nuevaPos);
     checks = checks.filter(idx => idx !== index && idx !== nuevaPos);
-    if (isCheckedActual) checks.push(nuevaPos);
-    if (isCheckedNuevo) checks.push(index);
-    
+    if (isCheckedActual) checks.push(nuevaPos); if (isCheckedNuevo) checks.push(index);
     sesionActual.liberacionChecks[idAvion] = checks;
-    
-    renderizarChecklistDesdeSesion();
-    verificarEstadoLiberacion(idAvion);
-    guardarProgreso();
+    renderizarChecklistDesdeSesion(); verificarEstadoLiberacion(idAvion); guardarProgreso();
 }
 
 async function guardarProgreso() {
@@ -998,100 +941,67 @@ async function guardarProgreso() {
 function toggleTarea(index) {
     const chk = document.getElementById(`item${index}`);
     sesionActual.tareas[index].hecho = chk.checked;
-    if (chk.checked) {
-        sesionActual.tareas[index].hora = new Date().toLocaleTimeString();
-    } else {
-        sesionActual.tareas[index].hora = null;
-    }
-    renderizarChecklistDesdeSesion();
-    guardarProgreso();
+    sesionActual.tareas[index].hora = chk.checked ? new Date().toLocaleTimeString() : null;
+    renderizarChecklistDesdeSesion(); guardarProgreso();
 }
 
 function moverTarea(index, direccion) {
     const nuevaPos = index + direccion;
     if (nuevaPos < 0 || nuevaPos >= sesionActual.tareas.length) return;
-    const temp = sesionActual.tareas[index];
-    sesionActual.tareas[index] = sesionActual.tareas[nuevaPos];
-    sesionActual.tareas[nuevaPos] = temp;
-    renderizarChecklistDesdeSesion();
-    guardarProgreso();
+    const temp = sesionActual.tareas[index]; sesionActual.tareas[index] = sesionActual.tareas[nuevaPos]; sesionActual.tareas[nuevaPos] = temp;
+    renderizarChecklistDesdeSesion(); guardarProgreso();
 }
 
-function agregarTareaEnTurno() {
-    const texto = prompt("Nombre de la nueva tarea:");
-    if(texto) { sesionActual.tareas.push({ texto: texto, hecho: false, hora: null }); renderizarChecklistDesdeSesion(); guardarProgreso(); }
-}
-function eliminarTareaEnTurno(index) {
-    if(confirm("¿Eliminar esta tarea del turno?")) { sesionActual.tareas.splice(index, 1); renderizarChecklistDesdeSesion(); guardarProgreso(); }
-}
+function agregarTareaEnTurno() { const texto = prompt("Nombre de la nueva tarea:"); if(texto) { sesionActual.tareas.push({ texto: texto, hecho: false, hora: null }); renderizarChecklistDesdeSesion(); guardarProgreso(); } }
+function eliminarTareaEnTurno(index) { if(confirm("¿Eliminar esta tarea del turno?")) { sesionActual.tareas.splice(index, 1); renderizarChecklistDesdeSesion(); guardarProgreso(); } }
 function updateMatricula(i, val) { sesionActual.matriculas[i] = val; guardarProgreso(); }
 
 function verificarEstadoLiberacion(idAvion) {
     const totalItems = sesionActual.liberacionItems[idAvion].length;
     const checksDOM = document.querySelectorAll(`.sub-check-${idAvion}`);
-    let marcadosIndices = [];
-    let count = 0;
+    let marcadosIndices = []; let count = 0;
     checksDOM.forEach(chk => { if(chk.checked) { marcadosIndices.push(parseInt(chk.dataset.idx)); count++; } });
-    
     sesionActual.liberacionChecks[idAvion] = marcadosIndices;
     const card = document.getElementById(`cardAeronave${idAvion}`);
     const labelEstado = document.getElementById(`tsLib${idAvion}`);
-
     if (count === totalItems && totalItems > 0) {
         card.classList.add("liberado-ok");
         if (!sesionActual.matriculasHoras[idAvion]) { sesionActual.matriculasHoras[idAvion] = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}); }
         labelEstado.style.color = "var(--success)"; labelEstado.innerText = "¡LISTO! " + sesionActual.matriculasHoras[idAvion];
     } else {
-        card.classList.remove("liberado-ok");
-        sesionActual.matriculasHoras[idAvion] = null;
+        card.classList.remove("liberado-ok"); sesionActual.matriculasHoras[idAvion] = null;
         labelEstado.style.color = "var(--neon-red)"; labelEstado.innerText = "INSPECCIÓN EN CURSO (" + count + "/" + totalItems + ")";
     }
     guardarProgreso();
 }
 
 function addFoto(i) {
-  const fileInput = document.getElementById(`file${i}`);
-  const file = fileInput.files[0];
-  if (!file) return;
+  const fileInput = document.getElementById(`file${i}`); const file = fileInput.files[0]; if (!file) return;
   const reader = new FileReader();
   reader.onloadend = function() {
-    const img = new Image();
-    img.src = reader.result;
+    const img = new Image(); img.src = reader.result;
     img.onload = function() {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        const MAX_WIDTH = 800; 
-        const scale = MAX_WIDTH / img.width;
-        canvas.width = MAX_WIDTH;
-        canvas.height = img.height * scale;
+        const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
+        const MAX_WIDTH = 800; const scale = MAX_WIDTH / img.width;
+        canvas.width = MAX_WIDTH; canvas.height = img.height * scale;
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        fotosAeronaves[i].push(canvas.toDataURL('image/jpeg', 0.60)); 
-        renderGaleria(i);
-        guardarProgreso(); fileInput.value = ""; 
+        fotosAeronaves[i].push(canvas.toDataURL('image/jpeg', 0.60)); renderGaleria(i); guardarProgreso(); fileInput.value = ""; 
     }
   }
   reader.readAsDataURL(file);
 }
 
 function addFotoObservaciones() {
-  const fileInput = document.getElementById('fileObservaciones');
-  const file = fileInput.files[0];
-  if (!file) return;
+  const fileInput = document.getElementById('fileObservaciones'); const file = fileInput.files[0]; if (!file) return;
   const reader = new FileReader();
   reader.onloadend = function() {
-    const img = new Image();
-    img.src = reader.result;
+    const img = new Image(); img.src = reader.result;
     img.onload = function() {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        const MAX_WIDTH = 800; 
-        const scale = MAX_WIDTH / img.width;
-        canvas.width = MAX_WIDTH;
-        canvas.height = img.height * scale;
+        const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
+        const MAX_WIDTH = 800; const scale = MAX_WIDTH / img.width;
+        canvas.width = MAX_WIDTH; canvas.height = img.height * scale;
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        fotosObservaciones.push(canvas.toDataURL('image/jpeg', 0.60)); 
-        renderGaleriaObservaciones();
-        guardarProgreso(); fileInput.value = ""; 
+        fotosObservaciones.push(canvas.toDataURL('image/jpeg', 0.60)); renderGaleriaObservaciones(); guardarProgreso(); fileInput.value = ""; 
     }
   }
   reader.readAsDataURL(file);
@@ -1099,134 +1009,60 @@ function addFotoObservaciones() {
 
 function renderGaleriaObservaciones() {
   const galeria = document.getElementById('galeriaObservaciones');
-  galeria.innerHTML = fotosObservaciones.map((src, index) => `
-    <div class="img-wrapper"><img src="${src}" class="img-thumb" onclick="verImagenGrande(this.src)"><button class="btn-remove-img" onclick="removeFotoObservaciones(${index})"><i class="fas fa-times"></i></button></div>
-  `).join('');
+  galeria.innerHTML = fotosObservaciones.map((src, index) => `<div class="img-wrapper"><img src="${src}" class="img-thumb" onclick="verImagenGrande(this.src)"><button class="btn-remove-img" onclick="removeFotoObservaciones(${index})"><i class="fas fa-times"></i></button></div>`).join('');
 }
 function removeFotoObservaciones(index) { fotosObservaciones.splice(index, 1); renderGaleriaObservaciones(); guardarProgreso(); }
-
 function renderGaleria(i) {
   const galeria = document.getElementById(`galeria${i}`);
-  galeria.innerHTML = fotosAeronaves[i].map((src, index) => `
-    <div class="img-wrapper"><img src="${src}" class="img-thumb" onclick="verImagenGrande(this.src)"><button class="btn-remove-img" onclick="removeFoto(${i}, ${index})"><i class="fas fa-times"></i></button></div>
-  `).join('');
+  galeria.innerHTML = fotosAeronaves[i].map((src, index) => `<div class="img-wrapper"><img src="${src}" class="img-thumb" onclick="verImagenGrande(this.src)"><button class="btn-remove-img" onclick="removeFoto(${i}, ${index})"><i class="fas fa-times"></i></button></div>`).join('');
 }
 function removeFoto(i, index) { fotosAeronaves[i].splice(index, 1); renderGaleria(i); guardarProgreso(); }
 
 async function validarChecklist() {
-  const tipo = sesionActual.tipo;
-  let matriculasData = [];
+  const tipo = sesionActual.tipo; let matriculasData = [];
   if (tipo !== "Curso") {
     for (let i = 1; i <= 4; i++) {
-      const matInput = document.getElementById(`matEquipo${i}`);
-      const mat = matInput.value.trim();
+      const mat = document.getElementById(`matEquipo${i}`).value.trim();
       const checksFaltantes = document.querySelectorAll(`.sub-check-${i}:not(:checked)`);
       if (mat !== "") {
           if (checksFaltantes.length > 0) { alert(`⚠️ La aeronave ${mat.toUpperCase()} tiene ${checksFaltantes.length} puntos pendientes.`); return; }
-          // EXTRACCIÓN SEGURA DE FOTOS: previene pérdida de referencia
           const fotosAeronaveExtraidas = Array.isArray(fotosAeronaves[i]) ? [...fotosAeronaves[i]] : [];
           matriculasData.push({ id: mat.toUpperCase(), hora: sesionActual.matriculasHoras[i] || "--:--", fotos: fotosAeronaveExtraidas });
       }
     }
   }
-  
-  const tareasIncompletas = sesionActual.tareas.some(t => !t.hecho);
-  if (tareasIncompletas) { alert("⚠️ Tareas de jornada incompletas. Asegúrate de palomear todo."); return; }
-  
+  if (sesionActual.tareas.some(t => !t.hecho)) { alert("⚠️ Tareas de jornada incompletas. Asegúrate de palomear todo."); return; }
   const colaborador = await localforage.getItem("colaboradorQC");
-  const registro = {
-    nombre: colaborador.nombre, empleado: colaborador.empleado, fecha: colaborador.fecha,
-    jornada: tipo, matriculas: matriculasData, tiempoExtra: sesionActual.esExtra,
-    horaFin: new Date().toLocaleTimeString(), observaciones: document.getElementById("observacionesTurno").value.trim(),
-    fotosObservaciones: [...fotosObservaciones]
-  };
-  
+  const registro = { nombre: colaborador.nombre, empleado: colaborador.empleado, fecha: colaborador.fecha, jornada: tipo, matriculas: matriculasData, tiempoExtra: sesionActual.esExtra, horaFin: new Date().toLocaleTimeString(), observaciones: document.getElementById("observacionesTurno").value.trim(), fotosObservaciones: [...fotosObservaciones] };
   const mesClave = `historialQC_${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,"0")}`;
-  const historial = await localforage.getItem(mesClave) || [];
-  historial.push(registro);
-  
-  await localforage.setItem(mesClave, historial);
-  await localforage.removeItem("sesion_activa_qc");
-  sesionActual = null;
-  alert("✅ ¡Excelente turno! Tus datos se han guardado con éxito.");
-  
-  verificarMemoria(); 
-  irAHistorial();
+  const historial = await localforage.getItem(mesClave) || []; historial.push(registro);
+  await localforage.setItem(mesClave, historial); await localforage.removeItem("sesion_activa_qc");
+  sesionActual = null; alert("✅ ¡Excelente turno! Tus datos se han guardado con éxito."); verificarMemoria(); irAHistorial();
 }
 
 let nivelZoom = 1;
-
-function verImagenGrande(src) {
-    nivelZoom = 1;
-    const img = document.getElementById("imgFull");
-    img.src = src;
-    img.style.transform = `scale(1)`;
-    img.style.cursor = "zoom-in";
-    document.getElementById("visorImg").style.display = "flex";
-}
-
-function hacerZoom(event) {
-    event.stopPropagation(); 
-    const img = document.getElementById("imgFull");
-    
-    if (nivelZoom === 1) {
-        nivelZoom = 2.5; 
-        img.style.cursor = "zoom-out";
-        const rect = img.getBoundingClientRect();
-        const x = ((event.clientX - rect.left) / rect.width) * 100;
-        const y = ((event.clientY - rect.top) / rect.height) * 100;
-        img.style.transformOrigin = `${x}% ${y}%`;
-    } else {
-        nivelZoom = 1; 
-        img.style.cursor = "zoom-in";
-        img.style.transformOrigin = "center center";
-    }
-    img.style.transform = `scale(${nivelZoom})`;
-}
-
+function verImagenGrande(src) { nivelZoom = 1; const img = document.getElementById("imgFull"); img.src = src; img.style.transform = `scale(1)`; img.style.cursor = "zoom-in"; document.getElementById("visorImg").style.display = "flex"; }
+function hacerZoom(event) { event.stopPropagation(); const img = document.getElementById("imgFull"); if (nivelZoom === 1) { nivelZoom = 2.5; img.style.cursor = "zoom-out"; const rect = img.getBoundingClientRect(); const x = ((event.clientX - rect.left) / rect.width) * 100; const y = ((event.clientY - rect.top) / rect.height) * 100; img.style.transformOrigin = `${x}% ${y}%`; } else { nivelZoom = 1; img.style.cursor = "zoom-in"; img.style.transformOrigin = "center center"; } img.style.transform = `scale(${nivelZoom})`; }
 function cerrarVisor() { document.getElementById("visorImg").style.display = "none"; }
 
 async function abrirEditor(indice) {
     const mesClave = `historialQC_${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,"0")}`;
-    const historial = await localforage.getItem(mesClave);
-    const registro = historial[indice];
-    
-    indiceEditando = indice;
-    document.getElementById("editObservaciones").value = registro.observaciones || "";
-    fotosEditando = registro.fotosObservaciones ? [...registro.fotosObservaciones] : [];
+    const historial = await localforage.getItem(mesClave); const registro = historial[indice]; indiceEditando = indice;
+    document.getElementById("editObservaciones").value = registro.observaciones || ""; fotosEditando = registro.fotosObservaciones ? [...registro.fotosObservaciones] : [];
     renderGaleriaEdicion(); document.getElementById("modalEditor").style.display = "flex";
 }
 function cerrarEditor() { document.getElementById("modalEditor").style.display = "none"; indiceEditando = -1; fotosEditando = []; }
-
-function renderGaleriaEdicion() {
-    const galeria = document.getElementById("editGaleria");
-    galeria.innerHTML = fotosEditando.map((src, index) => `
-        <div class="img-wrapper">
-            <img src="${src}" class="img-thumb" onclick="verImagenGrande(this.src)">
-            <button class="btn-remove-img" onclick="eliminarFotoEdicion(${index})"><i class="fas fa-times"></i></button>
-        </div>
-    `).join('');
-}
+function renderGaleriaEdicion() { document.getElementById("editGaleria").innerHTML = fotosEditando.map((src, index) => `<div class="img-wrapper"><img src="${src}" class="img-thumb" onclick="verImagenGrande(this.src)"><button class="btn-remove-img" onclick="eliminarFotoEdicion(${index})"><i class="fas fa-times"></i></button></div>`).join(''); }
 function eliminarFotoEdicion(index) { fotosEditando.splice(index, 1); renderGaleriaEdicion(); }
-
 function addFotoEdicion() {
-  const fileInput = document.getElementById('fileEdit');
-  const file = fileInput.files[0];
-  if (!file) return;
+  const fileInput = document.getElementById('fileEdit'); const file = fileInput.files[0]; if (!file) return;
   const reader = new FileReader();
   reader.onloadend = function() {
-    const img = new Image();
-    img.src = reader.result;
+    const img = new Image(); img.src = reader.result;
     img.onload = function() {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        const MAX_WIDTH = 800; 
-        const scale = MAX_WIDTH / img.width;
-        canvas.width = MAX_WIDTH;
-        canvas.height = img.height * scale;
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        fotosEditando.push(canvas.toDataURL('image/jpeg', 0.60));
-        renderGaleriaEdicion(); fileInput.value = ""; 
+        const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
+        const MAX_WIDTH = 800; const scale = MAX_WIDTH / img.width; canvas.width = MAX_WIDTH; canvas.height = img.height * scale; ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        fotosEditando.push(canvas.toDataURL('image/jpeg', 0.60)); renderGaleriaEdicion(); fileInput.value = ""; 
     }
   }
   reader.readAsDataURL(file);
@@ -1235,177 +1071,44 @@ function addFotoEdicion() {
 async function guardarEdicion() {
     if(indiceEditando === -1) return;
     const mesClave = `historialQC_${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,"0")}`;
-    const historial = await localforage.getItem(mesClave);
-    historial[indiceEditando].observaciones = document.getElementById("editObservaciones").value;
-    historial[indiceEditando].fotosObservaciones = [...fotosEditando];
-    await localforage.setItem(mesClave, historial);
-    alert("✅ Registro actualizado correctamente"); cerrarEditor(); 
-    verificarMemoria();
-    cargarHistorialMensual(); 
+    const historial = await localforage.getItem(mesClave); historial[indiceEditando].observaciones = document.getElementById("editObservaciones").value; historial[indiceEditando].fotosObservaciones = [...fotosEditando];
+    await localforage.setItem(mesClave, historial); alert("✅ Registro actualizado correctamente"); cerrarEditor(); verificarMemoria(); cargarHistorialMensual(); 
 }
 
 async function cargarHistorialMensual() {
-  const ahora = new Date();
-  const mesClave = `historialQC_${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, "0")}`;
+  const ahora = new Date(); const mesClave = `historialQC_${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, "0")}`;
   const historial = await localforage.getItem(mesClave) || [];
-  
-  document.getElementById("statJornadas").innerText = historial.length;
-  document.getElementById("statExtra").innerText = historial.filter(r => r.tiempoExtra === "SI").length;
+  document.getElementById("statJornadas").innerText = historial.length; document.getElementById("statExtra").innerText = historial.filter(r => r.tiempoExtra === "SI").length;
   const contenedor = document.getElementById("listaHistorial");
-  
   if (historial.length === 0) { contenedor.innerHTML = "<div style='text-align:center; padding:40px 20px; color:var(--muted); background:var(--panel); border:1px solid var(--border); border-radius:6px;'><i class='fas fa-folder-open fa-3x' style='margin-bottom:15px; opacity:0.5;'></i><br>Aún no hay registros en este mes.</div>"; return; }
-  
-  // SOLUCIÓN AL RENDER: usamos this.src en el onclick para evitar saturar el template string con código Base64
-  contenedor.innerHTML = historial.map((reg, i) => `
-    <div style="padding:16px; margin-bottom:15px; background:var(--panel); border:1px solid var(--border); border-radius:6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-      <div style="display:flex; justify-content:space-between; margin-bottom:10px; align-items:center; border-bottom:1px solid #eee; padding-bottom:8px;">
-        <span style="color:var(--text); font-weight:bold; font-size:15px;">${reg.fecha}</span>
-        <span style="color:var(--muted); background:#f0f0f0; padding:4px 8px; border-radius:4px; font-size:12px; font-weight:bold;"><i class="fas fa-clock"></i> ${reg.horaFin}</span>
-      </div>
-      <strong style="font-size:15px; display:block; margin-bottom:10px; color:var(--viva-green);">${reg.jornada} ${reg.matriculas ? ' <span style="color:var(--text);">[' + reg.matriculas.map(m => m.id).join(', ') + ']</span>' : ''}</strong>
-      ${reg.matriculas ? reg.matriculas.map(m => `
-        <div style="margin-top:10px; background:#f9f9f9; padding:10px; border-radius:4px; border:1px solid #eee;"><small style="color:var(--text); font-weight:bold;"><i class="fas fa-plane"></i> ${m.id} (${m.hora})</small>
-          <div style="display:flex; gap:8px; margin-top:8px; overflow-x:auto;">${m.fotos ? m.fotos.map(f => `<img src="${f}" style="height:45px; width:45px; object-fit:cover; border-radius:4px; cursor:zoom-in; border:1px solid #ddd;" onclick="verImagenGrande(this.src)">`).join('') : ''}</div>
-        </div>`).join('') : ''}
-      <div style="margin-top:15px; padding-top:15px; border-top:1px dashed var(--border);">
-          <small style="color:var(--muted); display:block; margin-bottom:6px; font-weight:bold;"><i class="fas fa-comment-alt"></i> Observaciones Generales</small>
-          <p style="font-size:13px; color:var(--text); margin:0; line-height:1.4;">${reg.observaciones || "Sin novedades."}</p>
-          ${reg.fotosObservaciones && reg.fotosObservaciones.length > 0 ? `<div style="display:flex; gap:8px; margin-top:10px; overflow-x:auto;">${reg.fotosObservaciones.map(f => `<img src="${f}" style="height:55px; width:55px; object-fit:cover; border-radius:4px; border:1px solid #ddd; cursor:zoom-in;" onclick="verImagenGrande(this.src)">`).join('')}</div>` : ''}
-      </div>
-      <div style="display:flex; gap:10px; margin-top:15px;">
-        <button onclick="abrirEditor(${i})" class="btn-outline" style="padding:10px; flex:1;"><i class="fas fa-edit"></i> Editar</button>
-        <button onclick="eliminarRegistro(${i})" class="btn-danger" style="padding:10px; flex:1;"><i class="fas fa-trash"></i> Borrar</button>
-      </div>
-    </div>`).join("");
+  contenedor.innerHTML = historial.map((reg, i) => `<div style="padding:16px; margin-bottom:15px; background:var(--panel); border:1px solid var(--border); border-radius:6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);"><div style="display:flex; justify-content:space-between; margin-bottom:10px; align-items:center; border-bottom:1px solid #eee; padding-bottom:8px;"><span style="color:var(--text); font-weight:bold; font-size:15px;">${reg.fecha}</span><span style="color:var(--muted); background:#f0f0f0; padding:4px 8px; border-radius:4px; font-size:12px; font-weight:bold;"><i class="fas fa-clock"></i> ${reg.horaFin}</span></div><strong style="font-size:15px; display:block; margin-bottom:10px; color:var(--viva-green);">${reg.jornada} ${reg.matriculas ? ' <span style="color:var(--text);">[' + reg.matriculas.map(m => m.id).join(', ') + ']</span>' : ''}</strong>${reg.matriculas ? reg.matriculas.map(m => `<div style="margin-top:10px; background:#f9f9f9; padding:10px; border-radius:4px; border:1px solid #eee;"><small style="color:var(--text); font-weight:bold;"><i class="fas fa-plane"></i> ${m.id} (${m.hora})</small><div style="display:flex; gap:8px; margin-top:8px; overflow-x:auto;">${m.fotos ? m.fotos.map(f => `<img src="${f}" style="height:45px; width:45px; object-fit:cover; border-radius:4px; cursor:zoom-in; border:1px solid #ddd;" onclick="verImagenGrande(this.src)">`).join('') : ''}</div></div>`).join('') : ''}<div style="margin-top:15px; padding-top:15px; border-top:1px dashed var(--border);"><small style="color:var(--muted); display:block; margin-bottom:6px; font-weight:bold;"><i class="fas fa-comment-alt"></i> Observaciones Generales</small><p style="font-size:13px; color:var(--text); margin:0; line-height:1.4;">${reg.observaciones || "Sin novedades reportadas."}</p>${reg.fotosObservaciones && reg.fotosObservaciones.length > 0 ? `<div style="display:flex; gap:8px; margin-top:10px; overflow-x:auto;">${reg.fotosObservaciones.map(f => `<img src="${f}" style="height:55px; width:55px; object-fit:cover; border-radius:4px; border:1px solid #ddd; cursor:zoom-in;" onclick="verImagenGrande(this.src)">`).join('')}</div>` : ''}</div><div style="display:flex; gap:10px; margin-top:15px;"><button onclick="abrirEditor(${i})" class="btn-outline" style="padding:10px; flex:1;"><i class="fas fa-edit"></i> Editar</button><button onclick="eliminarRegistro(${i})" class="btn-danger" style="padding:10px; flex:1;"><i class="fas fa-trash"></i> Borrar</button></div></div>`).join("");
 }
 
 async function exportarPDF(){
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-  const ahora = new Date();
+  const { jsPDF } = window.jspdf; const doc = new jsPDF(); const ahora = new Date();
   const mesClave = `historialQC_${ahora.getFullYear()}-${String(ahora.getMonth()+1).padStart(2,"0")}`;
-  const h = await localforage.getItem(mesClave) || [];
-  if(h.length === 0){ alert("Aún no hay datos para exportar."); return; }
-
-  doc.setFontSize(18); doc.setTextColor(17, 92, 53); // Color Viva Green
-  doc.text("REPORTE MENSUAL DE CALIDAD (QC)", 14, 20);
-  
-  doc.setFontSize(10); doc.setTextColor(100, 100, 100);
-  doc.text(`Generado el: ${ahora.toLocaleDateString()} a las ${ahora.toLocaleTimeString()}`, 14, 26);
-
-  const body = h.map(r => [
-    r.fecha + "\n(" + r.horaFin + ")", 
-    r.jornada + (r.matriculas ? "\n\n" + r.matriculas.map(m => "• " + m.id + " (" + m.hora + ")").join("\n") : ""), 
-    r.observaciones || "Sin novedades reportadas."
-  ]);
-
-  doc.autoTable({
-    startY: 35,
-    head: [['Fecha y Culminación', 'Equipos Inspeccionados', 'Observaciones Generales']],
-    body: body,
-    styles: { fontSize: 9, cellPadding: 4, font: 'helvetica' },
-    headStyles: { fillColor: [17, 92, 53], textColor: [255,255,255], fontStyle: 'bold' },
-    columnStyles: { 0: {cellWidth: 40}, 1: {cellWidth: 60} },
-    alternateRowStyles: { fillColor: [245, 248, 250] }
-  });
-
-  h.forEach((reg, index) => {
+  const h = await localforage.getItem(mesClave) || []; if(h.length === 0){ alert("Aún no hay datos para exportar."); return; }
+  doc.setFontSize(18); doc.setTextColor(17, 92, 53); doc.text("REPORTE MENSUAL DE CALIDAD (QC)", 14, 20);
+  doc.setFontSize(10); doc.setTextColor(100, 100, 100); doc.text(`Generado el: ${ahora.toLocaleDateString()} a las ${ahora.toLocaleTimeString()}`, 14, 26);
+  const body = h.map(r => [r.fecha + "\n(" + r.horaFin + ")", r.jornada + (r.matriculas ? "\n\n" + r.matriculas.map(m => "• " + m.id + " (" + m.hora + ")").join("\n") : ""), r.observaciones || "Sin novedades reportadas."]);
+  doc.autoTable({ startY: 35, head: [['Fecha y Culminación', 'Equipos Inspeccionados', 'Observaciones Generales']], body: body, styles: { fontSize: 9, cellPadding: 4, font: 'helvetica' }, headStyles: { fillColor: [17, 92, 53], textColor: [255,255,255], fontStyle: 'bold' }, columnStyles: { 0: {cellWidth: 40}, 1: {cellWidth: 60} }, alternateRowStyles: { fillColor: [245, 248, 250] } });
+  h.forEach((reg) => {
       let allPhotos = [];
-      if(reg.matriculas && Array.isArray(reg.matriculas)){
-          reg.matriculas.forEach(m => {
-             if(m.fotos && m.fotos.length > 0) {
-                 m.fotos.forEach((f, i) => { allPhotos.push({ src: f, label: `Evidencia Aeronave: ${m.id} (Foto ${i+1})` }); });
-             }
-          });
-      }
-      if(reg.fotosObservaciones && Array.isArray(reg.fotosObservaciones)){
-          reg.fotosObservaciones.forEach((f, i) => { allPhotos.push({ src: f, label: `Evidencia de Observación General (Foto ${i+1})` }); });
-      }
-      
-      if(allPhotos.length > 0) {
-          doc.addPage(); 
-          doc.setFontSize(14); doc.setTextColor(30, 41, 59);
-          doc.text(`Anexo Fotográfico - Fecha del Turno: ${reg.fecha}`, 14, 15);
-          let yPos = 25;
-          const pageHeight = doc.internal.pageSize.height;
-          
-          allPhotos.forEach(photo => {
-              try {
-                const props = doc.getImageProperties(photo.src);
-                let pdfImgWidth = 170; 
-                let pdfImgHeight = (props.height * pdfImgWidth) / props.width;
-                
-                const maxPdfHeight = 240;
-                if (pdfImgHeight > maxPdfHeight) {
-                    pdfImgHeight = maxPdfHeight;
-                    pdfImgWidth = (props.width * pdfImgHeight) / props.height;
-                }
-
-                if (yPos + pdfImgHeight > pageHeight - 10) { doc.addPage(); yPos = 20; }
-                
-                const xPos = 20 + (170 - pdfImgWidth) / 2;
-
-                doc.setFontSize(10); doc.setTextColor(100,100,100);
-                doc.text(photo.label, 20, yPos - 3);
-                
-                doc.addImage(photo.src, 'JPEG', xPos, yPos, pdfImgWidth, pdfImgHeight);
-                doc.setDrawColor(200); doc.setLineWidth(0.5); doc.rect(xPos, yPos, pdfImgWidth, pdfImgHeight);
-                
-                yPos += pdfImgHeight + 15;
-              } catch(e) { console.error("Error al procesar la imagen para el PDF", e); }
-          });
-      }
+      if(reg.matriculas){ reg.matriculas.forEach(m => { if(m.fotos) m.fotos.forEach((f, i) => allPhotos.push({ src: f, label: `Evidencia Aeronave: ${m.id} (Foto ${i+1})` })); }); }
+      if(reg.fotosObservaciones){ reg.fotosObservaciones.forEach((f, i) => allPhotos.push({ src: f, label: `Evidencia de Observación General (Foto ${i+1})` })); }
+      if(allPhotos.length > 0) { doc.addPage(); doc.setFontSize(14); doc.setTextColor(30, 41, 59); doc.text(`Anexo Fotográfico - Fecha del Turno: ${reg.fecha}`, 14, 15); let yPos = 25; const pageHeight = doc.internal.pageSize.height;
+          allPhotos.forEach(photo => { try { const props = doc.getImageProperties(photo.src); let pW = 170; let pH = (props.height * pW) / props.width; if (pH > 240) { pH = 240; pW = (props.width * pH) / props.height; } if (yPos + pH > pageHeight - 10) { doc.addPage(); yPos = 20; } const xPos = 20 + (170 - pW) / 2; doc.setFontSize(10); doc.setTextColor(100,100,100); doc.text(photo.label, 20, yPos - 3); doc.addImage(photo.src, 'JPEG', xPos, yPos, pW, pH); doc.setDrawColor(200); doc.rect(xPos, yPos, pW, pH); yPos += pH + 15; } catch(e) {} }); }
   });
-  doc.save(`Reporte_QC_${mesClave}.pdf`);
-  
-  document.getElementById("alertaMemoria").style.display = "none";
+  doc.save(`Reporte_QC_${mesClave}.pdf`); document.getElementById("alertaMemoria").style.display = "none";
 }
 
-function filtrarHistorial() {
-  const busqueda = document.getElementById("buscadorHistorial").value.toLowerCase();
-  const tarjetas = document.querySelectorAll("#listaHistorial > div");
-  tarjetas.forEach(t => t.style.display = t.innerText.toLowerCase().includes(busqueda) ? "block" : "none");
-}
-
-async function irAHistorial(){
-  document.querySelectorAll("section").forEach(s => s.style.display = "none");
-  document.getElementById("pantallaHistorial").style.display = "block";
-  await cargarHistorialMensual();
-}
-
-async function eliminarRegistro(i) {
-  if(confirm("¿Estás seguro de que deseas eliminar este registro completo?")){
-      const mesClave = `historialQC_${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}`;
-      let h = await localforage.getItem(mesClave);
-      h.splice(i, 1);
-      await localforage.setItem(mesClave, h);
-      cargarHistorialMensual();
-      verificarMemoria();
-  }
-}
-
+function filtrarHistorial() { const b = document.getElementById("buscadorHistorial").value.toLowerCase(); document.querySelectorAll("#listaHistorial > div").forEach(t => t.style.display = t.innerText.toLowerCase().includes(b) ? "block" : "none"); }
+async function irAHistorial(){ document.querySelectorAll("section").forEach(s => s.style.display = "none"); document.getElementById("pantallaHistorial").style.display = "block"; await cargarHistorialMensual(); }
+async function eliminarRegistro(i) { if(confirm("¿Estás seguro de que deseas eliminar este registro completo?")){ const mesClave = `historialQC_${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}`; let h = await localforage.getItem(mesClave); h.splice(i, 1); await localforage.setItem(mesClave, h); cargarHistorialMensual(); verificarMemoria(); } }
 function volverAlInicio(){ document.getElementById("pantallaMenu").style.display = "none"; document.getElementById("pantallaInicio").style.display = "block"; }
 function volverAJornada(){ document.getElementById("pantallaTiempoExtra").style.display = "none"; document.getElementById("pantallaMenu").style.display = "block"; }
-
-async function nuevaJornada(){ 
-    const sesion = await localforage.getItem("sesion_activa_qc");
-    if(sesion){
-        if(confirm("Tienes un turno en curso. Si inicias uno nuevo, se perderá tu progreso actual. ¿Estás seguro de continuar?")) {
-            await localforage.removeItem("sesion_activa_qc");
-            location.reload();
-        }
-    } else { location.reload(); }
-}
-
-async function eliminarHistorial(){
-  if(confirm("⚠️ ¿Estás completamente seguro de borrar TODO el mes? Asegúrate de haber guardado tu PDF de respaldo primero.")){
-    const mesClave = `historialQC_${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,"0")}`;
-    await localforage.removeItem(mesClave);
-    cargarHistorialMensual();
-    verificarMemoria();
-    alert("✅ El mes ha sido borrado con éxito. Memoria liberada.");
-  }
-}
+async function nuevaJornada(){ const s = await localforage.getItem("sesion_activa_qc"); if(s){ if(confirm("Tienes un turno en curso. Si inicias uno nuevo, se perderá tu progreso actual.")){ await localforage.removeItem("sesion_activa_qc"); location.reload(); } } else { location.reload(); } }
+async function eliminarHistorial(){ if(confirm("⚠️ ¿Estás seguro de borrar TODO el mes?")){ const mesClave = `historialQC_${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,"0")}`; await localforage.removeItem(mesClave); cargarHistorialMensual(); verificarMemoria(); alert("✅ Mes borrado."); } }
 </script>
 </body>
 </html>
