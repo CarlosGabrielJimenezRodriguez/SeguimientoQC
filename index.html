@@ -293,7 +293,8 @@ let fotosAeronaves = { 1: [], 2: [], 3: [], 4: [] };
 let fotosObservaciones = [];
 
 window.onload = async function() {
-    localforage.config({ name: 'App_Hogar_Gabriel' });
+    // CAMBIO CLAVE: Nombre de base de datos exclusivo para QC
+    localforage.config({ name: 'App_QC_Gabriel_AeroSmart' }); 
     const config = await localforage.getItem("configChecklistsQC");
     if(config) misChecklists = config;
     
@@ -401,7 +402,6 @@ async function cargarHistorialMensual() {
     const mesClave = `historialQC_${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,"0")}`;
     const h = await localforage.getItem(mesClave) || [];
     document.getElementById("statJornadas").innerText = h.length;
-    // Se eliminó la lógica de statExtra
     document.getElementById("listaHistorial").innerHTML = h.map(r => `<div>${r.fecha} - ${r.jornada}</div>`).join("");
 }
 
