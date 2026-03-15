@@ -531,6 +531,11 @@
         <ul id="listaRecordatorioHoy" style="margin: 8px 0 0 0; padding-left: 20px;"></ul>
     </div>
 
+    <div id="contenedorPausados" style="display:none; background: rgba(245, 158, 11, 0.1); border-left: 4px solid var(--warning); padding: 12px; border-radius: 4px; margin-bottom: 15px;">
+        <strong style="color: var(--warning); font-size: 14px;"><i class="fas fa-pause-circle"></i> Turnos Pausados (Listos para continuar):</strong>
+        <div id="listaPausados" style="margin-top: 10px; display:flex; flex-direction:column; gap:8px;"></div>
+    </div>
+
     <form id="formInicio">
       <div style="background: var(--panel); padding: 16px; border: 1px solid var(--border); border-radius: 6px;">
           <div style="margin-bottom: 12px;">
@@ -749,8 +754,8 @@ window.onload = async function() {
     
     // --- INTEGRACIÓN: CONFIGURACIÓN DE SEGURIDAD TRABAJO ---
     localforage.config({
-        name: 'DB_AeroSmart_QC_Pro_Gabriel',
-        storeName: 'datos_trabajo_v1'
+        name: 'App_Trabajo_Gabriel_QC',
+        storeName: 'datos_trabajo'
     });
 
     const listasGuardadas = await localforage.getItem("configChecklistsQC");
@@ -764,36 +769,79 @@ window.onload = async function() {
     // --- CARGAR EVENTOS DEL CALENDARIO ---
     const eventosGuardados = await localforage.getItem("eventos_calendario_qc");
     if (eventosGuardados) eventosCalendarioQC = eventosGuardados;
-    
-    // --- LLAMADA A LA NUEVA FUNCIÓN DE RECORDATORIO ---
     actualizarRecordatorioHoy();
 
-    const sesionGuardada = await localforage.getItem("sesion_activa_qc");
-    if (sesionGuardada) {
-        if(confirm("⚠️ Tienes un turno pausado. ¿Deseas retomarlo ahora?")) {
-            sesionActual = sesionGuardada;
-            
-            if (!sesionActual.liberacionItems) {
-                sesionActual.liberacionItems = {
-                    1: [...misChecklists.Liberacion], 2: [...misChecklists.Liberacion],
-                    3: [...misChecklists.Liberacion], 4: [...misChecklists.Liberacion]
-                };
-            }
-            // Inicializar las observaciones de equipos si no existen
-            if (!sesionActual.observacionesEquipos) {
-                sesionActual.observacionesEquipos = { 1: "", 2: "", 3: "", 4: "" };
-            }
-
-            fotosAeronaves = sesionActual.fotosAeronaves || { 1: [], 2: [], 3: [], 4: [] };
-            fotosObservaciones = sesionActual.fotosObservaciones || [];
-            document.getElementById("pantallaInicio").style.display = "none";
-            document.getElementById("pantallaChecklist").style.display = "block";
-            renderizarChecklistDesdeSesion();
-        }
+    // MIGRAR SESIÓN ANTIGUA AL NUEVO FORMATO MULTI-TURNOS (si existe)
+    const legacySesion = await localforage.getItem("sesion_activa_qc");
+    if (legacySesion) {
+        let pausadas = await localforage.getItem("sesiones_pausadas_qc") || {};
+        legacySesion.id = Date.now().toString();
+        legacySesion.colaborador = await localforage.getItem("colaboradorQC") || {fecha: "Turno Anterior"};
+        pausadas[legacySesion.id] = legacySesion;
+        await localforage.setItem("sesiones_pausadas_qc", pausadas);
+        await localforage.removeItem("sesion_activa_qc");
     }
-    
+
+    renderizarPausados();
     verificarMemoria(); 
 };
+
+// ==========================================
+// RENDERIZAR TURNOS PAUSADOS EN PANTALLA INICIO
+// ==========================================
+async function renderizarPausados() {
+    let pausadas = await localforage.getItem("sesiones_pausadas_qc") || {};
+    const keys = Object.keys(pausadas);
+    const contenedor = document.getElementById("contenedorPausados");
+    const lista = document.getElementById("listaPausados");
+
+    if (keys.length > 0) {
+        lista.innerHTML = "";
+        keys.forEach(k => {
+            let s = pausadas[k];
+            let fechaStr = s.colaborador && s.colaborador.fecha ? s.colaborador.fecha : "Sin Fecha";
+            let btnHTML = `<button type="button" class="btn-outline" style="border-color: var(--warning); color: #b45309; margin: 0; padding: 10px; justify-content: space-between; align-items: center;" onclick="retomarSesion('${k}')">
+                <span><i class="fas fa-calendar-day"></i> Día: ${fechaStr} (${s.tipo})</span>
+                <i class="fas fa-play-circle" style="font-size: 18px;"></i>
+            </button>`;
+            lista.innerHTML += btnHTML;
+        });
+        contenedor.style.display = "block";
+    } else {
+        contenedor.style.display = "none";
+    }
+}
+
+async function retomarSesion(id) {
+    let pausadas = await localforage.getItem("sesiones_pausadas_qc") || {};
+    if(pausadas[id]) {
+        sesionActual = pausadas[id];
+
+        // Seguros de compatibilidad
+        if (!sesionActual.liberacionItems) {
+            sesionActual.liberacionItems = {
+                1: [...misChecklists.Liberacion], 2: [...misChecklists.Liberacion],
+                3: [...misChecklists.Liberacion], 4: [...misChecklists.Liberacion]
+            };
+        }
+        if (!sesionActual.observacionesEquipos) {
+            sesionActual.observacionesEquipos = { 1: "", 2: "", 3: "", 4: "" };
+        }
+
+        fotosAeronaves = sesionActual.fotosAeronaves || { 1: [], 2: [], 3: [], 4: [] };
+        fotosObservaciones = sesionActual.fotosObservaciones || [];
+
+        if (sesionActual.colaborador) {
+            await localforage.setItem("colaboradorQC", sesionActual.colaborador);
+        }
+
+        document.getElementById("pantallaInicio").style.display = "none";
+        document.getElementById("pantallaChecklist").style.display = "block";
+        renderizarChecklistDesdeSesion();
+    }
+}
+// ==========================================
+
 
 // ==========================================
 // FUNCIÓN NUEVA: RECORDATORIO EN PANTALLA DE INICIO
@@ -999,18 +1047,6 @@ function volverAlInicioDesdeConfig() {
 // --- FLUJO ---
 document.getElementById("formInicio").addEventListener("submit", async function(e) {
   e.preventDefault();
-
-  const sesionGuardada = await localforage.getItem("sesion_activa_qc");
-  if (sesionGuardada && !sesionActual) {
-      if(!confirm("⚠️ Tienes un turno pausado de un día anterior. Si inicias uno nuevo ahora, se perderá tu avance previo. ¿Estás seguro de crear uno nuevo?")) {
-          return; 
-      }
-  } else if (sesionActual) {
-      document.getElementById("pantallaInicio").style.display = "none";
-      document.getElementById("pantallaChecklist").style.display = "block";
-      return;
-  }
-
   const datos = {
     nombre: document.getElementById("nombre").value.trim(),
     empleado: document.getElementById("empleado").value.trim(),
@@ -1027,7 +1063,7 @@ async function seleccionarJornada(tipo){
   document.getElementById("pantallaMenu").style.display = "none";
   if(tipo === "Curso"){
     await localforage.setItem("esTiempoExtraQC", "NO");
-    inicializarSesion(tipo, "NO");
+    await inicializarSesion(tipo, "NO");
   } else {
     document.getElementById("pantallaTiempoExtra").style.display = "block";
   }
@@ -1038,14 +1074,18 @@ async function seleccionarTiempoExtra(esExtra){
   await localforage.setItem("esTiempoExtraQC", strExtra);
   const tipo = await localforage.getItem("tipoJornadaQC");
   document.getElementById("pantallaTiempoExtra").style.display = "none";
-  inicializarSesion(tipo, strExtra);
+  await inicializarSesion(tipo, strExtra);
 }
 
-function inicializarSesion(tipo, esExtraStr) {
+async function inicializarSesion(tipo, esExtraStr) {
     let tareasIniciales = [...misChecklists[tipo]];
     if(esExtraStr === "SI" && tipo !== "Curso") tareasIniciales = tareasIniciales.concat(misChecklists.Extra);
 
+    const colaboradorData = await localforage.getItem("colaboradorQC");
+
     sesionActual = {
+        id: Date.now().toString(), // ID Único para poder tener varios turnos a la vez
+        colaborador: colaboradorData,
         tipo: tipo,
         esExtra: esExtraStr,
         tareas: tareasIniciales.map(t => ({ texto: t, hecho: false, hora: null })),
@@ -1056,7 +1096,7 @@ function inicializarSesion(tipo, esExtraStr) {
         },
         matriculas: { 1: "", 2: "", 3: "", 4: "" },
         matriculasHoras: { 1: null, 2: null, 3: null, 4: null },
-        observacionesEquipos: { 1: "", 2: "", 3: "", 4: "" }, 
+        observacionesEquipos: { 1: "", 2: "", 3: "", 4: "" },
         observaciones: "",
         fotosAeronaves: { 1: [], 2: [], 3: [], 4: [] },
         fotosObservaciones: []
@@ -1072,7 +1112,9 @@ async function pausarYVolverInicio() {
     await guardarProgreso();
     document.getElementById("pantallaChecklist").style.display = "none";
     document.getElementById("pantallaInicio").style.display = "block";
-    alert("✅ Turno pausado y guardado. Puedes revisarlo o retomarlo cuando quieras.");
+    renderizarPausados();
+    sesionActual = null; // Limpiar memoria para no sobreescribir datos por error
+    alert("✅ Turno pausado y guardado. Puedes retomarlo desde el menú principal cuando quieras.");
 }
 
 function volverInicioDesdeHistorial() {
@@ -1081,8 +1123,17 @@ function volverInicioDesdeHistorial() {
         document.getElementById("pantallaChecklist").style.display = "block";
     } else {
         document.getElementById("pantallaInicio").style.display = "block";
+        renderizarPausados();
     }
 }
+
+function volverAlInicio(){ 
+    document.getElementById("pantallaMenu").style.display = "none"; 
+    document.getElementById("pantallaInicio").style.display = "block"; 
+    renderizarPausados();
+}
+function volverAJornada(){ document.getElementById("pantallaTiempoExtra").style.display = "none"; document.getElementById("pantallaMenu").style.display = "block"; }
+
 
 // --- RENDERIZADO Y MODOS DEL CHECKLIST ---
 function toggleModoEdicion() {
@@ -1267,7 +1318,12 @@ async function guardarProgreso() {
     sesionActual.observaciones = document.getElementById("observacionesTurno").value;
     sesionActual.fotosAeronaves = fotosAeronaves;
     sesionActual.fotosObservaciones = fotosObservaciones;
-    await localforage.setItem("sesion_activa_qc", sesionActual);
+    
+    // GUARDAR EN DICCIONARIO DE SESIONES PAUSADAS
+    let pausadas = await localforage.getItem("sesiones_pausadas_qc") || {};
+    pausadas[sesionActual.id] = sesionActual;
+    await localforage.setItem("sesiones_pausadas_qc", pausadas);
+    
     verificarMemoria(); 
 }
 
@@ -1366,12 +1422,24 @@ async function validarChecklist() {
     }
   }
   if (sesionActual.tareas.some(t => !t.hecho)) { alert("⚠️ Tareas de jornada incompletas. Asegúrate de palomear todo."); return; }
-  const colaborador = await localforage.getItem("colaboradorQC");
+  
+  // Usar los datos de colaborador guardados EN ESTA SESIÓN ESPECÍFICA
+  const colaborador = sesionActual.colaborador || await localforage.getItem("colaboradorQC");
   const registro = { nombre: colaborador.nombre, empleado: colaborador.empleado, fecha: colaborador.fecha, jornada: tipo, matriculas: matriculasData, tiempoExtra: sesionActual.esExtra, horaFin: new Date().toLocaleTimeString(), observaciones: document.getElementById("observacionesTurno").value.trim(), fotosObservaciones: [...fotosObservaciones] };
+  
   const mesClave = `historialQC_${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,"0")}`;
   const historial = await localforage.getItem(mesClave) || []; historial.push(registro);
-  await localforage.setItem(mesClave, historial); await localforage.removeItem("sesion_activa_qc");
-  sesionActual = null; alert("✅ ¡Excelente turno! Tus datos se han guardado con éxito."); verificarMemoria(); irAHistorial();
+  await localforage.setItem(mesClave, historial); 
+  
+  // ELIMINAR ESTE TURNO DE LA LISTA DE PAUSADOS
+  let pausadas = await localforage.getItem("sesiones_pausadas_qc") || {};
+  delete pausadas[sesionActual.id];
+  await localforage.setItem("sesiones_pausadas_qc", pausadas);
+  
+  sesionActual = null; 
+  alert("✅ ¡Excelente turno! Tus datos se han guardado con éxito."); 
+  verificarMemoria(); 
+  irAHistorial();
 }
 
 let nivelZoom = 1;
@@ -1442,9 +1510,12 @@ async function exportarPDF(){
 function filtrarHistorial() { const b = document.getElementById("buscadorHistorial").value.toLowerCase(); document.querySelectorAll("#listaHistorial > div").forEach(t => t.style.display = t.innerText.toLowerCase().includes(b) ? "block" : "none"); }
 async function irAHistorial(){ document.querySelectorAll("section").forEach(s => s.style.display = "none"); document.getElementById("pantallaHistorial").style.display = "block"; await cargarHistorialMensual(); }
 async function eliminarRegistro(i) { if(confirm("¿Estás seguro de que deseas eliminar este registro completo?")){ const mesClave = `historialQC_${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}`; let h = await localforage.getItem(mesClave); h.splice(i, 1); await localforage.setItem(mesClave, h); cargarHistorialMensual(); verificarMemoria(); } }
-function volverAlInicio(){ document.getElementById("pantallaMenu").style.display = "none"; document.getElementById("pantallaInicio").style.display = "block"; }
-function volverAJornada(){ document.getElementById("pantallaTiempoExtra").style.display = "none"; document.getElementById("pantallaMenu").style.display = "block"; }
-async function nuevaJornada(){ const s = await localforage.getItem("sesion_activa_qc"); if(s){ if(confirm("Tienes un turno en curso. Si inicias uno nuevo, se perderá tu progreso actual.")){ await localforage.removeItem("sesion_activa_qc"); location.reload(); } } else { location.reload(); } }
+
+async function nuevaJornada(){ 
+    // Ahora puedes iniciar nuevas jornadas sin sobreescribir las anteriores
+    location.reload(); 
+}
+
 async function eliminarHistorial(){ if(confirm("⚠️ ¿Estás seguro de borrar TODO el mes?")){ const mesClave = `historialQC_${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,"0")}`; await localforage.removeItem(mesClave); cargarHistorialMensual(); verificarMemoria(); alert("✅ Mes borrado."); } }
 </script>
 </body>
