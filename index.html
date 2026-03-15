@@ -675,7 +675,10 @@
     
     <div class="action-bottom-bar" style="margin-top: 30px;">
         <button onclick="validarChecklist()" class="btn-success" style="padding: 16px; font-size: 15px;"><i class="fas fa-flag-checkered"></i> Finalizar Turno</button>
-        <button onclick="pausarYVolverInicio()" class="btn-outline" style="color: var(--danger); border-color: var(--danger);"><i class="fas fa-pause-circle"></i> Pausar y Salir</button>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <button onclick="pausarYVolverInicio()" class="btn-outline" style="color: var(--warning); border-color: var(--warning);"><i class="fas fa-pause-circle"></i> Pausar</button>
+            <button onclick="descartarYRegresar()" class="btn-outline" style="color: var(--danger); border-color: var(--danger);"><i class="fas fa-arrow-left"></i> Descartar</button>
+        </div>
     </div>
   </section>
 
@@ -1113,8 +1116,24 @@ async function pausarYVolverInicio() {
     document.getElementById("pantallaChecklist").style.display = "none";
     document.getElementById("pantallaInicio").style.display = "block";
     renderizarPausados();
-    sesionActual = null; // Limpiar memoria para no sobreescribir datos por error
+    sesionActual = null; 
     alert("✅ Turno pausado y guardado. Puedes retomarlo desde el menú principal cuando quieras.");
+}
+
+async function descartarYRegresar() {
+    if(confirm("⚠️ ¿Te equivocaste de turno? Si regresas ahora, este turno se descartará y no se guardará nada.")) {
+        if (sesionActual && sesionActual.id) {
+            let pausadas = await localforage.getItem("sesiones_pausadas_qc") || {};
+            if (pausadas[sesionActual.id]) {
+                delete pausadas[sesionActual.id];
+                await localforage.setItem("sesiones_pausadas_qc", pausadas);
+            }
+        }
+        sesionActual = null;
+        document.getElementById("pantallaChecklist").style.display = "none";
+        document.getElementById("pantallaInicio").style.display = "block";
+        renderizarPausados();
+    }
 }
 
 function volverInicioDesdeHistorial() {
